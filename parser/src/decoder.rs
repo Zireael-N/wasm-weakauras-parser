@@ -1,3 +1,5 @@
+use core::ops::{Index, IndexMut};
+
 struct ByteMap([u8; 256]);
 
 impl ByteMap {
@@ -7,11 +9,26 @@ impl ByteMap {
         unsafe { self.0.get_unchecked(byte as usize) }
     }
 
-    #[allow(dead_code)]
     #[inline(always)]
     fn get_mut(&mut self, byte: u8) -> &mut u8 {
         // safety: this is safe because the underlying array has 256 elements in it
         unsafe { self.0.get_unchecked_mut(byte as usize) }
+    }
+}
+
+impl Index<u8> for ByteMap {
+    type Output = u8;
+
+    #[inline(always)]
+    fn index(&self, byte: u8) -> &Self::Output {
+        self.get(byte)
+    }
+}
+
+impl IndexMut<u8> for ByteMap {
+    #[inline(always)]
+    fn index_mut(&mut self, byte: u8) -> &mut Self::Output {
+        self.get_mut(byte)
     }
 }
 
@@ -37,9 +54,9 @@ static BYTE_MAP: ByteMap = ByteMap([
 #[allow(clippy::unreadable_literal)]
 #[rustfmt::skip]
 static POW2: [u32; 31] = [
-    1,        2,        4,        8,         16,        32,        64,      128,
-    256,      512,      1024,     2048,      4096,      8192,      16384,   32768,
-    65536,    131072,   262144,   524288,    1048576,   2097152,   4194304, 8388608,
+    1,        2,        4,        8,         16,        32,        64,         128,
+    256,      512,      1024,     2048,      4096,      8192,      16384,      32768,
+    65536,    131072,   262144,   524288,    1048576,   2097152,   4194304,    8388608,
     16777216, 33554432, 67108864, 134217728, 268435456, 536870912, 1073741824,
 ];
 
@@ -56,7 +73,7 @@ pub(crate) fn decode_for_print(s: &str) -> Vec<u8> {
             break;
         }
 
-        let bytes: Vec<u8> = s[i..i + 4].bytes().map(|b| *BYTE_MAP.get(b)).collect();
+        let bytes: Vec<u8> = s[i..i + 4].bytes().map(|b| BYTE_MAP[b]).collect();
 
         let mut cache = u32::from(bytes[0])
             + (u32::from(bytes[1]) << 6)
@@ -80,7 +97,7 @@ pub(crate) fn decode_for_print(s: &str) -> Vec<u8> {
             break;
         }
 
-        let byte = *BYTE_MAP.get(s.as_bytes()[i]);
+        let byte = BYTE_MAP[s.as_bytes()[i]];
         cache += u32::from(byte) * POW2[cache_bitlen];
 
         i += 1;

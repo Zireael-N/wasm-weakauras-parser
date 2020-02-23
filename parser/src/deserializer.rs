@@ -53,18 +53,32 @@ impl Serialize for LuaValue {
     }
 }
 
-fn deserialize_string_replacer<'t>(captures: &Captures<'t>) -> String {
-    if &captures[1] < "~\x7A" {
-        format!("{}", (&captures[1].as_bytes()[1] - 64) as char)
-    } else {
-        match &captures[1] {
-            "~\x7A" => "\x1E".into(),
-            "~\x7B" => "\x7F".into(),
-            "~\x7C" => "\x7E".into(),
-            "~\x7D" => "\x5E".into(),
-            _ => panic!("invalid escape character"),
-        }
+fn deserialize_string_replacer<'t>(captures: &Captures<'t>) -> Result<String, &'static str> {
+    Ok(match &captures[1].bytes().nth(1).unwrap() {
+        v @ std::u8::MIN..=b'\x79' => ((v - 64) as char).to_string(),
+        b'\x7A' => "\x1E".into(),
+        b'\x7B' => "\x7F".into(),
+        b'\x7C' => "\x7E".into(),
+        b'\x7D' => "\x5E".into(),
+        _ => return Err("invalid escape character"),
+    })
+}
+
+fn replace_all(
+    re: &Regex,
+    haystack: &str,
+    replacement: impl Fn(&Captures) -> Result<String, &'static str>,
+) -> Result<String, &'static str> {
+    let mut new = String::with_capacity(haystack.len());
+    let mut last_match = 0;
+    for caps in re.captures_iter(haystack) {
+        let m = caps.get(0).unwrap();
+        new.push_str(&haystack[last_match..m.start()]);
+        new.push_str(&replacement(&caps)?);
+        last_match = m.end();
     }
+    new.push_str(&haystack[last_match..]);
+    Ok(new)
 }
 
 fn deserialize_string<'t>(data: &'t str) -> Result<String, &'static str> {
@@ -72,14 +86,7 @@ fn deserialize_string<'t>(data: &'t str) -> Result<String, &'static str> {
         static ref REPLACE_REGEX: Regex = Regex::new("(~.)").unwrap();
     }
 
-    // FIXME: figure out if it's possible to have a replacer
-    // that returns Result<T, E> instead of relying on panic!()
-    std::panic::catch_unwind(|| {
-        REPLACE_REGEX
-            .replace_all(data, deserialize_string_replacer)
-            .into()
-    })
-    .map_err(|_| "invalid escape character")
+    replace_all(&REPLACE_REGEX, data, deserialize_string_replacer)
 }
 
 fn deserialize_number<'t>(data: &'t str) -> Result<f64, &'static str> {
@@ -88,7 +95,7 @@ fn deserialize_number<'t>(data: &'t str) -> Result<f64, &'static str> {
         "1.#INF" | "inf" => Ok(std::f64::INFINITY),
         "1.#IND" | "nan" => Ok(std::f64::NAN), // 0x7ff8000000000000
         "-1.#IND" | "-nan" => Ok(-std::f64::NAN), // 0xfff8000000000000
-        v => v.parse().map_err(|_| "failed parsing a number"),
+        v => v.parse().map_err(|_| "failed to parse a number"),
     }
 }
 

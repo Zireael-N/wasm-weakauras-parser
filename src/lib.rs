@@ -1,3 +1,5 @@
+use std::error::Error;
+use js_sys::Error as JsError;
 use wasm_bindgen::prelude::*;
 use weakauras_parser::decode;
 
@@ -6,7 +8,7 @@ use weakauras_parser::decode;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn parse(wa_string: &str) -> Option<String> {
-    let deserialized = decode(wa_string).ok()?;
-    serde_json::to_string_pretty(&deserialized).ok()
+pub fn parse(wa_string: &str) -> Result<String, JsValue> {
+    let deserialized = decode(wa_string).map_err(|e| JsValue::from(JsError::new(e)))?;
+    serde_json::to_string_pretty(&deserialized).map_err(|e| JsError::new(e.description()).into())
 }

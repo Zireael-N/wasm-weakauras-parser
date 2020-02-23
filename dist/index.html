@@ -45,12 +45,11 @@
 
         worker.onmessage = ({ data: { message, data } }) => {
             switch (message) {
+                case 'failure':
+                    alert(`Failed to decode: ${data}`);
+                    break;
                 case 'completed':
-                    if (data) {
-                        destination.value = data;
-                    } else {
-                        alert("Failed to parse the input value!");
-                    }
+                    destination.value = data;
                 case 'initialized':
                 default:
                     break;

@@ -153,7 +153,7 @@ pub(crate) fn deserialize(data: &str) -> Result<Vec<LuaValue>, &'static str> {
 
     match iter.next() {
         Some(ref capture) if &capture["control"] == "^1" => (),
-        _ => return Err("Supplied data is not AceSerializer data (rev 1)"),
+        _ => return Err("supplied data is not AceSerializer data (rev 1)"),
     };
 
     let mut data = Vec::new();

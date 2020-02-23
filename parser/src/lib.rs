@@ -15,5 +15,5 @@ pub fn decode(data: &str) -> Result<Vec<LuaValue>, &'static str> {
 
     let decoded = decode_for_print(&data[1..]);
     let decompressed = inflate_bytes(&decoded).map_err(|_| "failed to INFLATE")?;
-    deserialize(std::str::from_utf8(&decompressed).map_err(|_| "invalid utf-8")?)
+    deserialize(std::str::from_utf8(&decompressed).map_err(|_| "invalid UTF-8")?)
 }

@@ -4,9 +4,16 @@ init('./wasm_weakauras_parser_bg.wasm').then(() => self.postMessage({
 }));
 
 self.onmessage = ({ data }) => {
-    const parsed = parse(data);
-    self.postMessage({
-        message: 'completed',
-        data: parsed,
-    });
+    try {
+        const parsed = parse(data);
+        self.postMessage({
+            message: 'completed',
+            data: parsed,
+        });
+    } catch(e) {
+        self.postMessage({
+            message: 'failure',
+            data: e.message,
+        });
+    }
 };

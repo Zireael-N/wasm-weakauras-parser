@@ -1,3 +1,7 @@
+// This file is based on code from LibDeflate
+// Copyright (C) 2018-2019 Haoqian He
+// https://github.com/SafeteeWoW/LibDeflate
+
 use core::ops::{Index, IndexMut};
 
 struct ByteMap([u8; 256]);

@@ -68,49 +68,39 @@ static POW2: [u32; 31] = [
 // it's not idiomatic Rust.
 pub(crate) fn decode_for_print(s: &str) -> Vec<u8> {
     let len = s.len();
+    let mut result = Vec::with_capacity(len * 3 / 4);
+    let mut iter = s.bytes().map(|b| u32::from(BYTE_MAP[b]));
 
-    let mut result = Vec::with_capacity(len);
+    {
+        let mut at = 0;
+        loop {
+            if at >= len - 4 {
+                break;
+            }
 
-    let mut i = 0;
-    loop {
-        if i >= len - 4 {
-            break;
+            let tripple = iter
+                .by_ref()
+                .take(4)
+                .enumerate()
+                .fold(0, |acc, (i, byte)| acc + (byte << (i * 6)));
+
+            result.push(tripple as u8);
+            result.push((tripple >> 8) as u8);
+            result.push((tripple >> 16) as u8);
+
+            at += 4;
         }
-
-        let bytes: Vec<u8> = s[i..i + 4].bytes().map(|b| BYTE_MAP[b]).collect();
-
-        let mut cache = u32::from(bytes[0])
-            + (u32::from(bytes[1]) << 6)
-            + (u32::from(bytes[2]) << 12)
-            + (u32::from(bytes[3]) << 18);
-        let b1 = cache % 256;
-        cache = (cache - b1) / 256;
-        let b2 = cache % 256;
-        let b3 = (cache - b2) / 256;
-        result.push(b1 as u8);
-        result.push(b2 as u8);
-        result.push(b3 as u8);
-
-        i += 4;
     }
 
     let mut cache = 0;
     let mut cache_bitlen = 0;
-    loop {
-        if i >= len - 1 {
-            break;
-        }
-
-        let byte = BYTE_MAP[s.as_bytes()[i]];
-        cache += u32::from(byte) * POW2[cache_bitlen];
-
-        i += 1;
+    for byte in iter {
+        cache += byte * POW2[cache_bitlen];
+        cache_bitlen += 6;
     }
-
     while cache_bitlen >= 8 {
-        let byte = cache % 256;
-        result.push(byte as u8);
-        cache = (cache - byte) / 256;
+        result.push(cache as u8);
+        cache >>= 8;
         cache_bitlen -= 8;
     }
 

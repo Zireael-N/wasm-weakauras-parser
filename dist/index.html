@@ -23,7 +23,7 @@
             margin: 0 auto;
             padding: 24px;
             display: grid;
-            grid-template-rows: repeat(2, 1fr) 40px;
+            grid-template-rows: repeat(2, 1fr) 40px auto;
             grid-gap: 16px;
         }
         #source, #destination{
@@ -33,6 +33,9 @@
         }
         #decode {
             font: 16px/40px sans-serif;
+        }
+        #copyright {
+            text-align: center;
         }
     </style>
     <script type="module" defer>
@@ -86,6 +89,7 @@
             placeholder="JSON representation"
             readonly></textarea>
         <button id="decode" type=submit disabled>Loading...</button>
+        <small id="copyright">This project uses algorithms from <a href="https://github.com/SafeteeWoW/LibDeflate">LibDeflate</a> and <a href="https://www.curseforge.com/wow/addons/ace3">Ace3</a>.</small>
     </div>
 </body>
 </html>

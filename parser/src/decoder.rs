@@ -64,38 +64,28 @@ static POW2: [u32; 31] = [
     16777216, 33554432, 67108864, 134217728, 268435456, 536870912, 1073741824,
 ];
 
-// This is a faithful reimplementation of the Lua code,
-// it's not idiomatic Rust.
 pub(crate) fn decode_for_print(s: &str) -> Vec<u8> {
     let len = s.len();
     let mut result = Vec::with_capacity(len * 3 / 4);
-    let mut iter = s.bytes().map(|b| u32::from(BYTE_MAP[b]));
 
-    {
-        let mut at = 0;
-        loop {
-            if at >= len - 4 {
-                break;
-            }
+    let mut chunks = s.as_bytes().chunks_exact(4);
 
-            let tripple = iter
-                .by_ref()
-                .take(4)
-                .enumerate()
-                .fold(0, |acc, (i, byte)| acc + (byte << (i * 6)));
+    for chunk in chunks.by_ref() {
+        let tripple = chunk
+            .iter()
+            .map(|&b| u32::from(BYTE_MAP[b]))
+            .enumerate()
+            .fold(0, |acc, (i, byte)| acc + (byte << (i * 6)));
 
-            result.push(tripple as u8);
-            result.push((tripple >> 8) as u8);
-            result.push((tripple >> 16) as u8);
-
-            at += 4;
-        }
+        result.push(tripple as u8);
+        result.push((tripple >> 8) as u8);
+        result.push((tripple >> 16) as u8);
     }
 
     let mut cache = 0;
     let mut cache_bitlen = 0;
-    for byte in iter {
-        cache += byte * POW2[cache_bitlen];
+    for &byte in chunks.remainder() {
+        cache += u32::from(BYTE_MAP[byte]) * POW2[cache_bitlen];
         cache_bitlen += 6;
     }
     while cache_bitlen >= 8 {

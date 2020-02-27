@@ -1,46 +1,22 @@
-// This file is based on code from
-// 1) LibCompress (decode_for_print function)
-//    Copyright (C) jjsheets and Galmok
-//    https://www.curseforge.com/wow/addons/libcompress
-// 2) WeakAuras-Decoder (decompress_huffman function)
-//    Copyright (C) SoftCreatR
-//    https://github.com/SoftCreatR/WeakAuras-Decoder
+// This file is based on code from WeakAuras-Decoder
+// Copyright (C) SoftCreatR
+// https://github.com/SoftCreatR/WeakAuras-Decoder
 
-use super::byte_map::BYTE_MAP;
 use std::borrow::Cow;
 use std::collections::{btree_map::Entry, BTreeMap as Map};
 
-pub(crate) fn decode_for_print(s: &str) -> Vec<u8> {
-    let len = s.len();
-    let mut result = Vec::with_capacity(len * 3 / 4);
-
-    let mut bitfield = 0;
-    let mut bitfield_len = 0;
-    for byte in s.bytes().map(|b| u32::from(BYTE_MAP[b])) {
-        if bitfield_len >= 8 {
-            result.push(bitfield as u8);
-            bitfield >>= 8;
-            bitfield_len -= 8;
-        }
-        bitfield += byte << bitfield_len;
-        bitfield_len += 6;
-    }
-
-    result
-}
-
 // This is far from idiomatic Rust.
-pub(crate) fn decompress_huffman<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static str> {
-    let len = bytes.len();
-    if len < 5 {
-        return Err("insufficient data");
-    }
-
+pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static str> {
     let mut iter = bytes.iter();
     match iter.next() {
         Some(1) => return Ok(Cow::from(&bytes[1..])),
         Some(3) => (),
         _ => return Err("unknown compression codec"),
+    }
+
+    let len = bytes.len();
+    if len < 5 {
+        return Err("insufficient data");
     }
 
     let num_symbols = iter.next().unwrap() + 1;
@@ -133,9 +109,4 @@ pub(crate) fn decompress_huffman<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &
     } else {
         Ok(Cow::from(result))
     }
-}
-
-pub fn decode(data: &str) -> Result<Vec<u8>, &'static str> {
-    let decoded = decode_for_print(data);
-    Ok(decompress_huffman(&decoded)?.into_owned())
 }

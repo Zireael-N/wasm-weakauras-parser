@@ -16,7 +16,7 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
         true
     };
 
-    let data = base64::decode(data);
+    let data = base64::decode(data)?;
     let decoded = if legacy {
         huffman::decompress(&data)?
     } else {

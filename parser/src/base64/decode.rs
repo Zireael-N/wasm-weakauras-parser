@@ -10,8 +10,12 @@ const INVALID_B64: &str = "failed to decode base64";
 #[cfg(not(feature = "unsafe"))]
 pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let len = s.len();
-    let mut result = Vec::with_capacity(len * 3 / 4);
 
+    if len % 4 == 1 {
+        return Err("invalid base64 length");
+    }
+
+    let mut result = Vec::with_capacity(len * 3 / 4);
     let mut chunks = s.as_bytes().chunks_exact(4);
 
     for chunk in chunks.by_ref() {
@@ -68,11 +72,6 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
                 result.push(word.to_ne_bytes()[3]);
             }
         }
-        1 => {
-            if DECODE_LUT0[remainder[0]] == BAD_SYMBOL {
-                return Err(INVALID_B64);
-            }
-        }
         _ => (),
     }
 
@@ -83,8 +82,12 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
 // About 74% faster
 pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let len = s.len();
-    let mut result: Vec<u8> = Vec::with_capacity(len * 3 / 4);
 
+    if len % 4 == 1 {
+        return Err("invalid base64 length");
+    }
+
+    let mut result: Vec<u8> = Vec::with_capacity(len * 3 / 4);
     let mut chunks = s.as_bytes().chunks_exact(4);
 
     let mut ptr = result.as_mut_ptr();
@@ -162,11 +165,6 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
                 } else {
                     word.to_ne_bytes()[3]
                 });
-            }
-        }
-        1 => {
-            if DECODE_LUT0[remainder[0]] == BAD_SYMBOL {
-                return Err(INVALID_B64);
             }
         }
         _ => (),

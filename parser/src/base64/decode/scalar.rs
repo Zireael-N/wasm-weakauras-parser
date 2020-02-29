@@ -9,15 +9,8 @@ const INVALID_B64: &str = "failed to decode base64";
 
 #[cfg(not(feature = "unsafe"))]
 #[inline(always)]
-pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
-    let len = s.len();
-
-    if len % 4 == 1 {
-        return Err("invalid base64 length");
-    }
-
-    let mut result = Vec::with_capacity(len * 3 / 4);
-    let mut chunks = s.as_bytes().chunks_exact(4);
+pub(crate) fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static str> {
+    let mut chunks = s.chunks_exact(4);
 
     for chunk in chunks.by_ref() {
         let word = DECODE_LUT0[chunk[0]]
@@ -31,13 +24,13 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
 
         let word = word.to_ne_bytes();
         if cfg!(target_endian = "little") {
-            result.push(word[0]);
-            result.push(word[1]);
-            result.push(word[2]);
+            buf.push(word[0]);
+            buf.push(word[1]);
+            buf.push(word[2]);
         } else {
-            result.push(word[3]);
-            result.push(word[2]);
-            result.push(word[1]);
+            buf.push(word[3]);
+            buf.push(word[2]);
+            buf.push(word[1]);
         }
     }
 
@@ -53,11 +46,11 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
 
             let word = word.to_ne_bytes();
             if cfg!(target_endian = "little") {
-                result.push(word[0]);
-                result.push(word[1]);
+                buf.push(word[0]);
+                buf.push(word[1]);
             } else {
-                result.push(word[3]);
-                result.push(word[2]);
+                buf.push(word[3]);
+                buf.push(word[2]);
             }
         }
         2 => {
@@ -68,32 +61,26 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
             }
 
             if cfg!(target_endian = "little") {
-                result.push(word as u8);
+                buf.push(word as u8);
             } else {
-                result.push(word.to_ne_bytes()[3]);
+                buf.push(word.to_ne_bytes()[3]);
             }
         }
         _ => (),
     }
 
-    Ok(result)
+    Ok(())
 }
 
 // About 74% faster
 #[cfg(feature = "unsafe")]
 #[inline(always)]
-pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
-    let len = s.len();
+/// SAFETY: the caller must ensure that buf can hold AT LEAST (s.len() * 3 / 4) more elements
+pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static str> {
+    let mut chunks = s.chunks_exact(4);
 
-    if len % 4 == 1 {
-        return Err("invalid base64 length");
-    }
-
-    let mut result: Vec<u8> = Vec::with_capacity(len * 3 / 4);
-    let mut chunks = s.as_bytes().chunks_exact(4);
-
-    let mut ptr = result.as_mut_ptr();
-    let mut len = 0;
+    let mut len = buf.len();
+    let mut ptr = buf[len..].as_mut_ptr();
 
     for chunk in chunks.by_ref() {
         len += 3;
@@ -108,22 +95,20 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
         }
 
         let word = word.to_ne_bytes();
-        unsafe {
-            if cfg!(target_endian = "little") {
-                ptr.write(word[0]);
-                ptr = ptr.add(1);
-                ptr.write(word[1]);
-                ptr = ptr.add(1);
-                ptr.write(word[2]);
-                ptr = ptr.add(1);
-            } else {
-                ptr.write(word[3]);
-                ptr = ptr.add(1);
-                ptr.write(word[2]);
-                ptr = ptr.add(1);
-                ptr.write(word[1]);
-                ptr = ptr.add(1);
-            }
+        if cfg!(target_endian = "little") {
+            ptr.write(word[0]);
+            ptr = ptr.add(1);
+            ptr.write(word[1]);
+            ptr = ptr.add(1);
+            ptr.write(word[2]);
+            ptr = ptr.add(1);
+        } else {
+            ptr.write(word[3]);
+            ptr = ptr.add(1);
+            ptr.write(word[2]);
+            ptr = ptr.add(1);
+            ptr.write(word[1]);
+            ptr = ptr.add(1);
         }
     }
 
@@ -140,16 +125,14 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
             }
 
             let word = word.to_ne_bytes();
-            unsafe {
-                if cfg!(target_endian = "little") {
-                    ptr.write(word[0]);
-                    ptr = ptr.add(1);
-                    ptr.write(word[1]);
-                } else {
-                    ptr.write(word[3]);
-                    ptr = ptr.add(1);
-                    ptr.write(word[2]);
-                }
+            if cfg!(target_endian = "little") {
+                ptr.write(word[0]);
+                ptr = ptr.add(1);
+                ptr.write(word[1]);
+            } else {
+                ptr.write(word[3]);
+                ptr = ptr.add(1);
+                ptr.write(word[2]);
             }
         }
         2 => {
@@ -161,20 +144,16 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
                 return Err(INVALID_B64);
             }
 
-            unsafe {
-                ptr.write(if cfg!(target_endian = "little") {
-                    word as u8
-                } else {
-                    word.to_ne_bytes()[3]
-                });
-            }
+            ptr.write(if cfg!(target_endian = "little") {
+                word as u8
+            } else {
+                word.to_ne_bytes()[3]
+            });
         }
         _ => (),
     }
 
-    unsafe {
-        result.set_len(len);
-    }
+    buf.set_len(len);
 
-    Ok(result)
+    Ok(())
 }

@@ -3,11 +3,12 @@
 // Copyright (C) 2005-2016 Nick Galbreath
 // https://github.com/client9/stringencoders
 
-use super::byte_map::{BAD_SYMBOL, DECODE_LUT0, DECODE_LUT1, DECODE_LUT2, DECODE_LUT3};
+use crate::base64::byte_map::{BAD_SYMBOL, DECODE_LUT0, DECODE_LUT1, DECODE_LUT2, DECODE_LUT3};
 
 const INVALID_B64: &str = "failed to decode base64";
 
 #[cfg(not(feature = "unsafe"))]
+#[inline(always)]
 pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let len = s.len();
 
@@ -78,8 +79,9 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     Ok(result)
 }
 
-#[cfg(feature = "unsafe")]
 // About 74% faster
+#[cfg(feature = "unsafe")]
+#[inline(always)]
 pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let len = s.len();
 

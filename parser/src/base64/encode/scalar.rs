@@ -1,6 +1,7 @@
-use super::byte_map::ENCODE_LUT;
+use crate::base64::byte_map::ENCODE_LUT;
 
 #[cfg(not(feature = "unsafe"))]
+#[inline(always)]
 pub(crate) fn encode(data: &[u8]) -> String {
     let mut result = Vec::with_capacity((data.len() * 4 + 2) / 3);
     let mut chunks = data.chunks_exact(3);
@@ -31,8 +32,9 @@ pub(crate) fn encode(data: &[u8]) -> String {
     unsafe { String::from_utf8_unchecked(result) }
 }
 
-#[cfg(feature = "unsafe")]
 // About 103% faster
+#[cfg(feature = "unsafe")]
+#[inline(always)]
 pub(crate) fn encode(data: &[u8]) -> String {
     let mut result: Vec<u8> = Vec::with_capacity((data.len() * 4 + 2) / 3);
     let mut chunks = data.chunks_exact(3);

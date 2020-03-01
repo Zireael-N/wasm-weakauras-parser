@@ -1,3 +1,5 @@
+#[cfg(all(test, target_feature = "avx2"))]
+mod avx2;
 mod scalar;
 #[cfg(all(any(feature = "unsafe", test), target_feature = "ssse3"))]
 mod sse;
@@ -61,6 +63,33 @@ mod tests {
         unsafe {
             scalar::decode(&data, &mut buf1).unwrap();
             sse::decode(&data, &mut buf2).unwrap();
+        }
+
+        assert_eq!(buf1, buf2);
+    }
+
+    #[test]
+    #[cfg(target_feature = "avx2")]
+    fn scalar_and_avx2_return_same_values() {
+        if !is_x86_feature_detected!("avx2") {
+            panic!("AVX2 support is not detected");
+        }
+
+        let data: Vec<u8> = (b'0'..=b'9')
+            .chain(b'a'..=b'z')
+            .chain(b'A'..=b'Z')
+            .chain(b'('..=b')')
+            .cycle()
+            .take(1024 * 1024 + 3)
+            .collect();
+
+        let cap = data.len() * 3 / 4;
+        let mut buf1 = Vec::with_capacity(cap);
+        let mut buf2 = Vec::with_capacity(cap);
+
+        unsafe {
+            scalar::decode(&data, &mut buf1).unwrap();
+            avx2::decode(&data, &mut buf2).unwrap();
         }
 
         assert_eq!(buf1, buf2);

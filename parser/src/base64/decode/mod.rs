@@ -4,26 +4,30 @@ mod scalar;
 #[cfg(all(any(feature = "unsafe", test), target_feature = "ssse3"))]
 mod sse;
 
-#[cfg(all(feature = "unsafe", target_feature = "ssse3"))]
-pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
+#[inline(always)]
+fn calculate_capacity(s: &str) -> Result<usize, &'static str> {
     let len = s.len();
     if len % 4 == 1 {
         return Err("invalid base64 length");
     }
 
-    let mut buffer = Vec::with_capacity(len * 3 / 4);
-    unsafe { sse::decode(s.as_bytes(), &mut buffer)? }
+    len.checked_mul(3)
+        .map(|len| len / 4)
+        .ok_or("cannot calculate capacity without overflowing")
+}
+
+#[cfg(all(feature = "unsafe", target_feature = "ssse3"))]
+pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
+    let mut buffer = Vec::with_capacity(calculate_capacity(s)?);
+    unsafe {
+        sse::decode(s.as_bytes(), &mut buffer)?;
+    }
     Ok(buffer)
 }
 
 #[cfg(all(feature = "unsafe", not(target_feature = "ssse3")))]
 pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
-    let len = s.len();
-    if len % 4 == 1 {
-        return Err("invalid base64 length");
-    }
-
-    let mut buffer = Vec::with_capacity(len * 3 / 4);
+    let mut buffer = Vec::with_capacity(calculate_capacity(s)?);
     unsafe {
         scalar::decode(s.as_bytes(), &mut buffer)?;
     }
@@ -32,12 +36,7 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
 
 #[cfg(not(feature = "unsafe"))]
 pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
-    let len = s.len();
-    if len % 4 == 1 {
-        return Err("invalid base64 length");
-    }
-
-    let mut buffer = Vec::with_capacity(len * 3 / 4);
+    let mut buffer = Vec::with_capacity(calculate_capacity(s)?);
     scalar::decode(s.as_bytes(), &mut buffer)?;
     Ok(buffer)
 }

@@ -5,6 +5,7 @@ use super::scalar;
 use core::arch::x86_64::*;
 
 #[cfg(all(test, target_feature = "avx2"))]
+#[cfg_attr(feature = "cargo-clippy", allow(clippy::cast_ptr_alignment, clippy::unreadable_literal))]
 #[inline(always)]
 /// SAFETY: the caller must ensure that buf can hold AT LEAST (s.len() * 3 / 4) more elements
 pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static str> {
@@ -35,7 +36,7 @@ pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static 
     // checking against 43 to make sure the buffer can contain two extra 32-bit words.
     while len >= 43 {
         // Lookup:
-        let src = _mm256_loadu_si256(ptr as *const __m256i);
+        let src = _mm256_loadu_si256(ptr as *const _);
         let mut hi_nibbles = _mm256_srli_epi32(src, 4);
         let lo_nibbles = _mm256_and_si256(src, mask_last_char);
         let lo = _mm256_shuffle_epi8(lut_lo, lo_nibbles);
@@ -61,7 +62,7 @@ pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static 
         );
         let shuffled =
             _mm256_permutevar8x32_epi32(shuffled, _mm256_setr_epi32(0, 1, 2, 4, 5, 6, -1, -1));
-        _mm256_storeu_si256(out_ptr as *mut __m256i, shuffled);
+        _mm256_storeu_si256(out_ptr as *mut _, shuffled);
         out_ptr = out_ptr.add(24);
         out_len += 24;
 

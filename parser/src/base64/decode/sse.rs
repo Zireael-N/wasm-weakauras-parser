@@ -5,6 +5,7 @@ use super::scalar;
 use core::arch::x86_64::*;
 
 #[cfg(all(any(feature = "unsafe", test), target_feature = "ssse3"))]
+#[cfg_attr(feature = "cargo-clippy", allow(clippy::cast_ptr_alignment, clippy::unreadable_literal))]
 #[inline(always)]
 /// SAFETY: the caller must ensure that buf can hold AT LEAST (s.len() * 3 / 4) more elements
 pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static str> {
@@ -30,7 +31,7 @@ pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static 
     // checking against 22 to make sure the buffer can contain one extra 32-bit word.
     while len >= 22 {
         // Lookup:
-        let src = _mm_loadu_si128(ptr as *const __m128i);
+        let src = _mm_loadu_si128(ptr as *const _);
         let mut hi_nibbles = _mm_srli_epi32(src, 4);
         let lo_nibbles = _mm_and_si128(src, mask_last_char);
         let lo = _mm_shuffle_epi8(lut_lo, lo_nibbles);
@@ -50,7 +51,7 @@ pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static 
             swapped,
             _mm_setr_epi8(0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, -1, -1, -1, -1),
         );
-        _mm_storeu_si128(out_ptr as *mut __m128i, shuffled);
+        _mm_storeu_si128(out_ptr as *mut _, shuffled);
         out_ptr = out_ptr.add(12);
         out_len += 12;
 

@@ -5,6 +5,7 @@ use super::scalar;
 use core::arch::x86_64::*;
 
 #[cfg(all(any(feature = "unsafe", test), target_feature = "ssse3"))]
+#[cfg_attr(feature = "cargo-clippy", allow(clippy::cast_ptr_alignment, clippy::unreadable_literal))]
 #[inline(always)]
 /// SAFETY: the caller must ensure that buf can hold AT LEAST ((s.len() * 4 + 2) / 3) more elements
 pub(crate) unsafe fn encode(s: &[u8], buf: &mut String) {

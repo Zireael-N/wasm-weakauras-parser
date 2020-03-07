@@ -30,20 +30,18 @@ pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static 
         0, 0, 0, 0, 0, 0, 0, 0,
     );
 
-    let mask_last_char = _mm256_set1_epi8(0x2f);
+    let mask_lo_nibble = _mm256_set1_epi8(0x0f);
 
     // Since we'll be writing 32 bytes at a time (last 8 containing zeroes),
     // checking against 43 to make sure the buffer can contain two extra 32-bit words.
     while len >= 43 {
         // Lookup:
         let src = _mm256_loadu_si256(ptr as *const _);
-        let mut hi_nibbles = _mm256_srli_epi32(src, 4);
-        let lo_nibbles = _mm256_and_si256(src, mask_last_char);
+        let hi_nibbles = _mm256_and_si256(_mm256_srli_epi32(src, 4), mask_lo_nibble);
+        let lo_nibbles = _mm256_and_si256(src, mask_lo_nibble);
         let lo = _mm256_shuffle_epi8(lut_lo, lo_nibbles);
-        let is_last_char = _mm256_cmpeq_epi8(src, mask_last_char);
-        hi_nibbles = _mm256_and_si256(hi_nibbles, mask_last_char);
         let hi = _mm256_shuffle_epi8(lut_hi, hi_nibbles);
-        let roll = _mm256_shuffle_epi8(lut_roll, _mm256_add_epi8(is_last_char, hi_nibbles));
+        let roll = _mm256_shuffle_epi8(lut_roll, hi_nibbles);
 
         if _mm256_testz_si256(lo, hi) == 0 {
             return Err("failed to decode base64");

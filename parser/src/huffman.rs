@@ -3,7 +3,7 @@
 // https://github.com/SoftCreatR/WeakAuras-Decoder
 
 use std::borrow::Cow;
-use std::collections::{btree_map::Entry, BTreeMap as Map};
+use std::collections::BTreeMap as Map;
 
 // This is far from idiomatic Rust.
 pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static str> {
@@ -78,11 +78,11 @@ pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static 
             #[allow(clippy::mut_range_bound)]
             for i in bitfield_len.saturating_sub(7)..=bitfield_len {
                 l = i;
-                if let Entry::Occupied(mut top_entry) = map.entry(l) {
+                if let Some(top_entry) = map.get(&l) {
                     let key = bitfield & ((1 << l) - 1);
 
-                    if let Entry::Occupied(inner_entry) = top_entry.get_mut().entry(key) {
-                        result.push(*inner_entry.get());
+                    if let Some(&inner_entry) = top_entry.get(&key) {
+                        result.push(inner_entry);
                         bitfield >>= l;
                         bitfield_len -= l;
                         l = 0;

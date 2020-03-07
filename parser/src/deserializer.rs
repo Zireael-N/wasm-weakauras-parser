@@ -1,5 +1,5 @@
 // This file is based on code from AceSerializer-3.0
-// Copyright (c) 2007, Ace3 Development Team 
+// Copyright (c) 2007, Ace3 Development Team
 // https://www.curseforge.com/wow/addons/ace3/
 
 use lazy_static::lazy_static;
@@ -111,7 +111,7 @@ fn deserialize_value<'r, 't>(
         "^^" => None,
         "^S" => Some(LuaValue::String(deserialize_string(&capture["data"])?)),
         "^N" => Some(LuaValue::Number(deserialize_number(&capture["data"])?)),
-        "^F" => Some(iter.next().ok_or_else(|| "missing exponent").and_then(
+        "^F" => Some(iter.next().ok_or("missing exponent").and_then(
             |ref next_capture| {
                 if &next_capture["control"] == "^f" {
                     let mantissa = deserialize_number(&capture["data"])?;
@@ -137,11 +137,11 @@ fn deserialize_value<'r, 't>(
                         }
 
                         let key =
-                            deserialize_value(iter, next_capture)?.ok_or_else(|| "invalid key")?;
+                            deserialize_value(iter, next_capture)?.ok_or("invalid key")?;
 
-                        let value_capture = iter.next().ok_or_else(|| "missing value")?;
+                        let value_capture = iter.next().ok_or("missing value")?;
                         let value = deserialize_value(iter, value_capture)?
-                            .ok_or_else(|| "invalid value")?;
+                            .ok_or("invalid value")?;
 
                         map.insert(key.try_to_string().map_err(|_| "invalid key")?, value);
                     }

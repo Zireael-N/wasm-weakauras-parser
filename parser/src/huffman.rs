@@ -39,7 +39,7 @@ pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static 
 
     for _ in 0..num_symbols {
         bitfield +=
-            u32::from(*iter.next().ok_or_else(|| "unexpected end of input")?) << bitfield_len;
+            u32::from(*iter.next().ok_or("unexpected end of input")?) << bitfield_len;
         bitfield_len += 8;
         let symbol = bitfield as u8;
         bitfield >>= 8;
@@ -47,7 +47,7 @@ pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static 
 
         loop {
             bitfield +=
-                u32::from(*iter.next().ok_or_else(|| "unexpected end of input")?) << bitfield_len;
+                u32::from(*iter.next().ok_or("unexpected end of input")?) << bitfield_len;
             bitfield_len += 8;
             if (bitfield & (bitfield >> 1)) != 0 {
                 break;

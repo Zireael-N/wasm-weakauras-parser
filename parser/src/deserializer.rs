@@ -113,18 +113,20 @@ fn deserialize_value<'r, 't>(
         "^^" => None,
         "^S" => Some(LuaValue::String(deserialize_string(&capture["data"])?)),
         "^N" => Some(LuaValue::Number(deserialize_number(&capture["data"])?)),
-        "^F" => Some(iter.next().ok_or("missing exponent").and_then(
-            |ref next_capture| {
-                if &next_capture["control"] == "^f" {
-                    let mantissa = deserialize_number(&capture["data"])?;
-                    let exponent = deserialize_number(&next_capture["data"])?;
+        "^F" => Some(
+            iter.next()
+                .ok_or("missing exponent")
+                .and_then(|ref next_capture| {
+                    if &next_capture["control"] == "^f" {
+                        let mantissa = deserialize_number(&capture["data"])?;
+                        let exponent = deserialize_number(&next_capture["data"])?;
 
-                    Ok(LuaValue::Number(mantissa * (2f64.powf(exponent))))
-                } else {
-                    Err("missing exponent")
-                }
-            },
-        )?),
+                        Ok(LuaValue::Number(mantissa * (2f64.powf(exponent))))
+                    } else {
+                        Err("missing exponent")
+                    }
+                })?,
+        ),
         "^B" => Some(LuaValue::Boolean(true)),
         "^b" => Some(LuaValue::Boolean(false)),
         "^Z" => Some(LuaValue::Null),
@@ -138,12 +140,11 @@ fn deserialize_value<'r, 't>(
                             break;
                         }
 
-                        let key =
-                            deserialize_value(iter, next_capture)?.ok_or("invalid key")?;
+                        let key = deserialize_value(iter, next_capture)?.ok_or("invalid key")?;
 
                         let value_capture = iter.next().ok_or("missing value")?;
-                        let value = deserialize_value(iter, value_capture)?
-                            .ok_or("invalid value")?;
+                        let value =
+                            deserialize_value(iter, value_capture)?.ok_or("invalid value")?;
 
                         map.insert(key.try_to_string().map_err(|_| "invalid key")?, value);
                     }

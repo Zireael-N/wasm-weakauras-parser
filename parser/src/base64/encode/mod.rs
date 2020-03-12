@@ -1,7 +1,15 @@
-#[cfg(all(test, target_feature = "avx2"))]
+#[cfg(all(
+    test,
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "avx2"
+))]
 mod avx2;
 mod scalar;
-#[cfg(all(any(feature = "unsafe", test), target_feature = "ssse3"))]
+#[cfg(all(
+    any(feature = "unsafe", test),
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "ssse3"
+))]
 mod sse;
 
 #[inline(always)]
@@ -13,7 +21,11 @@ fn calculate_capacity(data: &[u8]) -> Result<usize, &'static str> {
         .ok_or("cannot calculate capacity without overflowing")
 }
 
-#[cfg(all(feature = "unsafe", target_feature = "ssse3"))]
+#[cfg(all(
+    feature = "unsafe",
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "ssse3"
+))]
 pub(crate) fn encode(data: &[u8]) -> Result<String, &'static str> {
     let mut result = String::with_capacity(calculate_capacity(data)?);
     unsafe {
@@ -22,7 +34,13 @@ pub(crate) fn encode(data: &[u8]) -> Result<String, &'static str> {
     Ok(result)
 }
 
-#[cfg(all(feature = "unsafe", not(target_feature = "ssse3")))]
+#[cfg(all(
+    feature = "unsafe",
+    any(
+        not(any(target_arch = "x86", target_arch = "x86_64")),
+        not(target_feature = "ssse3")
+    )
+))]
 pub(crate) fn encode(data: &[u8]) -> Result<String, &'static str> {
     let mut result = String::with_capacity(calculate_capacity(data)?);
     unsafe {
@@ -59,7 +77,10 @@ mod tests {
     }
 
     #[test]
-    #[cfg(target_feature = "avx2")]
+    #[cfg(all(
+        any(target_arch = "x86", target_arch = "x86_64"),
+        target_feature = "avx2"
+    ))]
     fn scalar_and_avx2_return_same_values() {
         if !is_x86_feature_detected!("avx2") {
             panic!("AVX2 support is not detected");

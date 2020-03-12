@@ -27,6 +27,7 @@ cat ./src/worker.js >> dist/wasm_weakauras_parser.js
 
 # deploy to gh-pages
 if [[ "${GIT_REMOTE:+1}" ]]; then
+	cp -r parser/LICENSES dist
 	pushd dist
 	rm .gitignore
 	git init

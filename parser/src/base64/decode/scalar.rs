@@ -1,7 +1,7 @@
-// Slightly modified version of:
-// MODP_B64 - High performance base64 encoder/decoder
-// Copyright (C) 2005-2016 Nick Galbreath
-// https://github.com/client9/stringencoders
+// Based on code from https://github.com/client9/stringencoders
+// Copyright (c) 2005-2016 Nick Galbreath
+// All rights reserved.
+// Licensed under MIT (see LICENSES/stringencoders)
 
 use crate::base64::byte_map::{BAD_SYMBOL, DECODE_LUT0, DECODE_LUT1, DECODE_LUT2, DECODE_LUT3};
 

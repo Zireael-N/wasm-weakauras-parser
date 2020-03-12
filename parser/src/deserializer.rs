@@ -1,6 +1,8 @@
 // This file is based on code from AceSerializer-3.0
-// Copyright (c) 2007, Ace3 Development Team
 // https://www.curseforge.com/wow/addons/ace3/
+// Copyright (c) 2007, Ace3 Development Team
+// All Rights Reserved
+// Licensed under modified BSD 3-clause (see LICENSES/Ace3)
 
 use lazy_static::lazy_static;
 use regex::{CaptureMatches, Captures, Regex};

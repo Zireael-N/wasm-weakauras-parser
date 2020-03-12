@@ -1,5 +1,8 @@
 // Based on a research done by Wojciech Muła and Daniel Lemire
 // https://arxiv.org/abs/1704.00605
+// Copyright (c) 2015-2016, Wojciech Muła, Alfred Klomp, Daniel Lemire
+// All rights reserved.
+// Licensed under BSD 2-Clause (see LICENSES/fastbase64)
 
 use super::scalar;
 use core::arch::x86_64::*;

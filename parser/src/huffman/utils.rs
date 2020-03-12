@@ -1,7 +1,7 @@
 // Based on code from LibCompress
 // Copyright (c) jjsheets and Galmok
 // https://www.curseforge.com/wow/addons/libcompress
-// Licensed under GPLv2
+// Licensed under GPLv2 (see LICENSES/LibCompress)
 
 use super::bitfield::Bitfield;
 

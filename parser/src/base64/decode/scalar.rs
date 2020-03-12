@@ -94,15 +94,11 @@ pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static 
             return Err(INVALID_B64);
         }
 
-        let word = word.to_ne_bytes();
         if cfg!(target_endian = "little") {
-            ptr.write(word[0]);
-            ptr = ptr.add(1);
-            ptr.write(word[1]);
-            ptr = ptr.add(1);
-            ptr.write(word[2]);
-            ptr = ptr.add(1);
+            std::ptr::copy(&word as *const _ as *const u8, ptr, 3);
+            ptr = ptr.add(3);
         } else {
+            let word = word.to_ne_bytes();
             ptr.write(word[3]);
             ptr = ptr.add(1);
             ptr.write(word[2]);
@@ -124,12 +120,10 @@ pub(crate) unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static 
                 return Err(INVALID_B64);
             }
 
-            let word = word.to_ne_bytes();
             if cfg!(target_endian = "little") {
-                ptr.write(word[0]);
-                ptr = ptr.add(1);
-                ptr.write(word[1]);
+                std::ptr::copy(&word as *const _ as *const u8, ptr, 2);
             } else {
+                let word = word.to_ne_bytes();
                 ptr.write(word[3]);
                 ptr = ptr.add(1);
                 ptr.write(word[2]);

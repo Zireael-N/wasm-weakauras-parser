@@ -1,5 +1,7 @@
 mod reader;
+mod value;
 use reader::StrReader;
+pub use value::{LuaMapKey, LuaValue};
 
 #[cfg(all(not(feature = "indexmap"), feature = "fnv"))]
 use fnv::FnvHashMap as Map;
@@ -7,56 +9,6 @@ use fnv::FnvHashMap as Map;
 use indexmap::IndexMap as Map;
 #[cfg(not(any(feature = "indexmap", feature = "fnv")))]
 use std::collections::BTreeMap as Map;
-
-#[cfg(feature = "serde")]
-use serde::ser::{Serialize, Serializer};
-
-#[derive(Debug)]
-/// A tagged union representing all
-/// possible values in Lua.
-pub enum LuaValue {
-    Map(Map<String, LuaValue>),
-    String(String),
-    Number(f64),
-    Boolean(bool),
-    Null,
-}
-
-impl LuaValue {
-    fn try_to_string(&self) -> Result<String, &'static str> {
-        Ok(match self {
-            LuaValue::String(v) => v.clone(),
-            LuaValue::Number(v) => v.to_string(),
-            LuaValue::Boolean(v) => v.to_string(),
-            LuaValue::Null => "nil".into(),
-            LuaValue::Map(_) => return Err("can't convert a map into a string"),
-        })
-    }
-}
-
-#[cfg(feature = "serde")]
-impl Serialize for LuaValue {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        use serde::ser::SerializeMap;
-
-        match self {
-            LuaValue::String(s) => serializer.serialize_str(s),
-            LuaValue::Number(n) => serializer.serialize_f64(*n),
-            LuaValue::Boolean(b) => serializer.serialize_bool(*b),
-            LuaValue::Null => serializer.serialize_none(),
-            LuaValue::Map(m) => {
-                let mut map = serializer.serialize_map(Some(m.len()))?;
-                for (k, v) in m {
-                    map.serialize_entry(k, v)?;
-                }
-                map.end()
-            }
-        }
-    }
-}
 
 pub struct Deserializer<'s> {
     remaining_depth: usize,
@@ -158,12 +110,12 @@ impl<'s> Deserializer<'s> {
                         }
                         _ => {
                             check_recursion! {
-                                let key = self.deserialize_helper()?.ok_or("missing key")?;
+                                let key = self.deserialize_helper()?.ok_or("missing key").and_then(LuaMapKey::from_value)?;
                                 let value = match self.reader.peek_identifier()? {
                                     "^t" => return Err("unexpected end of a table"),
                                     _ => self.deserialize_helper()?.ok_or("missing value")?,
                                 };
-                                map.insert(key.try_to_string()?, value);
+                                map.insert(key, value);
                             }
                         }
                     }

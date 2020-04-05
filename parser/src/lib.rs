@@ -23,6 +23,5 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
         Cow::from(inflate::inflate_bytes(&data).map_err(|_| "failed to INFLATE")?)
     };
 
-    Deserializer::from_str(std::str::from_utf8(&decoded).map_err(|_| "invalid UTF-8")?)
-        .deserialize()
+    Deserializer::from_str(&String::from_utf8_lossy(&decoded)).deserialize()
 }

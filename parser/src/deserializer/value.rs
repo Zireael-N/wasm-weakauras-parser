@@ -29,12 +29,7 @@ use core::hash::{Hash, Hasher};
 impl Hash for LuaValue {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
-            LuaValue::Map(m) => {
-                for (k, v) in m {
-                    k.hash(state);
-                    v.hash(state);
-                }
-            }
+            LuaValue::Map(m) => state.write_usize(m as *const _ as usize),
             LuaValue::String(s) => s.hash(state),
             LuaValue::Number(n) => state.write_u64(n.to_bits()),
             LuaValue::Boolean(b) => b.hash(state),
@@ -67,13 +62,9 @@ impl PartialOrd for LuaValue {
             (LuaValue::Boolean(_), LuaValue::Map(_)) => Ordering::Greater,
             (LuaValue::Map(_), LuaValue::Boolean(_)) => Ordering::Less,
             (LuaValue::Map(m1), LuaValue::Map(m2)) => {
-                let mut entries1: Vec<_> = m1.iter().collect();
-                let mut entries2: Vec<_> = m2.iter().collect();
-
-                entries1.sort_unstable();
-                entries2.sort_unstable();
-
-                entries1.cmp(&entries2)
+                let p1 = m1 as *const _ as usize;
+                let p2 = m2 as *const _ as usize;
+                p1.cmp(&p2)
             }
             (LuaValue::Null, LuaValue::Null) => Ordering::Equal,
             (LuaValue::Null, _) => Ordering::Less,
@@ -89,7 +80,11 @@ impl Ord for LuaValue {
 impl PartialEq for LuaValue {
     fn eq(&self, other: &LuaValue) -> bool {
         match (self, other) {
-            (LuaValue::Map(m1), LuaValue::Map(m2)) => m1.eq(m2),
+            (LuaValue::Map(m1), LuaValue::Map(m2)) => {
+                let p1 = m1 as *const _ as usize;
+                let p2 = m2 as *const _ as usize;
+                p1.eq(&p2)
+            }
             (LuaValue::String(s1), LuaValue::String(s2)) => s1.eq(s2),
             (LuaValue::Number(n1), LuaValue::Number(n2)) => n1.eq(n2),
             (LuaValue::Boolean(b1), LuaValue::Boolean(b2)) => b1.eq(b2),

@@ -1,5 +1,4 @@
 use js_sys::Error as JsError;
-use std::error::Error;
 use wasm_bindgen::prelude::*;
 use weakauras_parser::decode;
 

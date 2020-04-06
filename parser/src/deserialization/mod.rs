@@ -1,14 +1,7 @@
 mod reader;
-mod value;
-use reader::StrReader;
-pub use value::{LuaMapKey, LuaValue};
 
-#[cfg(all(not(feature = "indexmap"), feature = "fnv"))]
-use fnv::FnvHashMap as Map;
-#[cfg(feature = "indexmap")]
-use indexmap::IndexMap as Map;
-#[cfg(not(any(feature = "indexmap", feature = "fnv")))]
-use std::collections::BTreeMap as Map;
+use crate::value::{LuaMapKey, LuaValue, Map};
+use reader::StrReader;
 
 pub struct Deserializer<'s> {
     remaining_depth: usize,

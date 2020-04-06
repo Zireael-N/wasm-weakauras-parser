@@ -1,7 +1,15 @@
-use super::Map;
+#[cfg(all(not(feature = "indexmap"), feature = "fnv"))]
+pub use fnv::FnvHashMap as Map;
+#[cfg(feature = "indexmap")]
+pub use indexmap::IndexMap as Map;
+#[cfg(not(any(feature = "indexmap", feature = "fnv")))]
+pub use std::collections::BTreeMap as Map;
 
 #[cfg(feature = "serde")]
-use serde::ser::{Serialize, Serializer};
+use serde::{
+    de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor},
+    ser::{Serialize, Serializer},
+};
 
 #[derive(Debug)]
 /// A tagged union representing all
@@ -163,5 +171,118 @@ impl Serialize for LuaValue {
                 map.end()
             }
         }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for LuaValue {
+    fn deserialize<D>(deserializer: D) -> Result<LuaValue, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct LuaValueVisitor;
+
+        impl<'de> Visitor<'de> for LuaValueVisitor {
+            type Value = LuaValue;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a Lua value")
+            }
+
+            fn visit_none<E>(self) -> Result<LuaValue, E> {
+                Ok(LuaValue::Null)
+            }
+
+            fn visit_unit<E>(self) -> Result<LuaValue, E> {
+                Ok(LuaValue::Null)
+            }
+
+            fn visit_bool<E>(self, value: bool) -> Result<LuaValue, E> {
+                Ok(LuaValue::Boolean(value))
+            }
+
+            fn visit_i64<E>(self, value: i64) -> Result<LuaValue, E>
+            where
+                E: de::Error,
+            {
+                let value_f64 = value as f64;
+                if value_f64 as i64 == value {
+                    Ok(LuaValue::Number(value_f64))
+                } else {
+                    Err(de::Error::custom("can't represent as f64"))
+                }
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<LuaValue, E>
+            where
+                E: de::Error,
+            {
+                let value_f64 = value as f64;
+                if value_f64 as u64 == value {
+                    Ok(LuaValue::Number(value_f64))
+                } else {
+                    Err(de::Error::custom("can't represent as f64"))
+                }
+            }
+
+            fn visit_f64<E>(self, value: f64) -> Result<LuaValue, E> {
+                Ok(LuaValue::Number(value))
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<LuaValue, E>
+            where
+                E: de::Error,
+            {
+                self.visit_string(String::from(value))
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<LuaValue, E> {
+                Ok(LuaValue::String(value))
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<LuaValue, V::Error>
+            where
+                V: SeqAccess<'de>,
+            {
+                let mut result = Map::with_capacity(seq.size_hint().unwrap_or(16));
+                let mut index = 1;
+
+                while let Some(element) = seq.next_element()? {
+                    result.insert(
+                        LuaMapKey::from_value(LuaValue::Number(index as f64)).unwrap(),
+                        element,
+                    );
+                    index += 1;
+                }
+
+                Ok(LuaValue::Map(result))
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<LuaValue, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut result = Map::with_capacity(map.size_hint().unwrap_or(16));
+
+                while let Some(key) = map.next_key()? {
+                    let key = LuaMapKey::from_value(match key {
+                        LuaValue::String(s) => match s.parse::<i32>() {
+                            Ok(n) => LuaValue::Number(n as f64),
+                            Err(_) => LuaValue::String(s),
+                        },
+                        v @ _ => v,
+                    })
+                    .map_err(de::Error::custom)?;
+
+                    let value = map.next_value()?;
+
+                    result.insert(key, value);
+                }
+
+                Ok(LuaValue::Map(result))
+            }
+        }
+
+        deserializer.deserialize_any(LuaValueVisitor)
     }
 }

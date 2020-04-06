@@ -1,8 +1,9 @@
 mod base64;
-mod deserializer;
+mod deserialization;
 mod huffman;
-use deserializer::Deserializer;
-pub use deserializer::LuaValue;
+mod value;
+use deserialization::Deserializer;
+pub use value::LuaValue;
 
 use std::borrow::Cow;
 

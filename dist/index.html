@@ -67,11 +67,21 @@
             if (!button.disabled) {
                 button.disabled = true;
                 button.innerText = "Decoding..."
-                worker.postMessage(source.value);
+                worker.postMessage({
+                    action: 'decode',
+                    data: source.value,
+                });
             }
 
             return false;
         });
+
+        window.encodeWA = data => {
+            worker.postMessage({
+                action: 'encode',
+                data,
+            });
+        };
     </script>
     <script nomodule>
         alert("Unfortunately, your browser does not support JS modules!");

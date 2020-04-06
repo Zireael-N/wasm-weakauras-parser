@@ -1,10 +1,16 @@
 mod base64;
-mod deserialization;
 mod huffman;
+
+mod deserialization;
+mod serialization;
 mod value;
+
 use deserialization::Deserializer;
+use serialization::Serializer;
 pub use value::LuaValue;
 
+use deflate::{self, Compression};
+use inflate;
 use std::borrow::Cow;
 
 /// Takes a string encoded by WeakAuras and returns
@@ -25,4 +31,12 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
     };
 
     Deserializer::from_str(&String::from_utf8_lossy(&decoded)).deserialize()
+}
+
+/// Takes a [LuaValue](enum.LuaValue.html) and returns
+/// a string that can be decoded by WeakAuras.
+pub fn encode(value: &LuaValue) -> Result<String, &'static str> {
+    Serializer::serialize(value, None)
+        .map(|serialized| deflate::deflate_bytes_conf(serialized.as_bytes(), Compression::Best))
+        .and_then(|compressed| base64::encode_weakaura(&compressed))
 }

@@ -24,6 +24,11 @@ pub enum LuaValue {
 
 pub struct LuaMapKey(LuaValue);
 impl LuaMapKey {
+    #[inline(always)]
+    pub fn as_value(&self) -> &LuaValue {
+        &self.0
+    }
+
     pub fn from_value(value: LuaValue) -> Result<Self, &'static str> {
         if let LuaValue::Null = value {
             Err("map key can't be null")

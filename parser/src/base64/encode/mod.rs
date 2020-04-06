@@ -12,22 +12,21 @@ mod scalar;
 ))]
 mod sse;
 
+const OVERFLOW_ERROR: &str = "cannot calculate capacity without overflowing";
+
 #[inline(always)]
-fn calculate_capacity(data: &[u8]) -> Result<usize, &'static str> {
+fn calculate_capacity(data: &[u8]) -> Option<usize> {
     // Equivalent to (s.len() * 4 + 2) / 3 but avoids an early overflow
     let len = data.len();
     let leftover = len % 3;
 
-    (len / 3)
-        .checked_mul(4)
-        .and_then(|len| {
-            if leftover > 0 {
-                len.checked_add(leftover + 1)
-            } else {
-                Some(len)
-            }
-        })
-        .ok_or("cannot calculate capacity without overflowing")
+    (len / 3).checked_mul(4).and_then(|len| {
+        if leftover > 0 {
+            len.checked_add(leftover + 1)
+        } else {
+            Some(len)
+        }
+    })
 }
 
 #[cfg(all(
@@ -35,33 +34,47 @@ fn calculate_capacity(data: &[u8]) -> Result<usize, &'static str> {
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature = "ssse3"
 ))]
-pub(crate) fn encode(data: &[u8]) -> Result<String, &'static str> {
-    let mut result = String::with_capacity(calculate_capacity(data)?);
-    unsafe {
-        sse::encode(data, &mut result);
-    }
-    Ok(result)
+#[inline(always)]
+/// SAFETY: the caller must ensure that buf can hold AT LEAST ((s.len() * 4 + 2) / 3) more elements
+unsafe fn encode(data: &[u8], result: &mut String) {
+    sse::encode(data, result);
 }
 
-#[cfg(all(
-    feature = "unsafe",
-    any(
-        not(any(target_arch = "x86", target_arch = "x86_64")),
-        not(target_feature = "ssse3")
-    )
+#[cfg(any(
+    not(feature = "unsafe"),
+    not(any(target_arch = "x86", target_arch = "x86_64")),
+    not(target_feature = "ssse3")
 ))]
-pub(crate) fn encode(data: &[u8]) -> Result<String, &'static str> {
-    let mut result = String::with_capacity(calculate_capacity(data)?);
+#[inline(always)]
+/// SAFETY: the caller must ensure that buf can hold AT LEAST ((s.len() * 4 + 2) / 3) more elements
+unsafe fn encode(data: &[u8], result: &mut String) {
+    scalar::encode(data, result);
+}
+
+#[allow(dead_code)]
+pub(crate) fn encode_weakaura(data: &[u8]) -> Result<String, &'static str> {
+    let mut result = String::with_capacity(
+        calculate_capacity(data)
+            .and_then(|len| len.checked_add(1))
+            .ok_or(OVERFLOW_ERROR)?,
+    );
+    result.push('!');
+
     unsafe {
-        scalar::encode(data, &mut result);
+        encode(data, &mut result);
     }
+
     Ok(result)
 }
 
-#[cfg(not(feature = "unsafe"))]
-pub(crate) fn encode(data: &[u8]) -> Result<String, &'static str> {
-    let mut result = String::with_capacity(calculate_capacity(data)?);
-    scalar::encode(data, &mut result);
+#[allow(dead_code)]
+pub(crate) fn encode_raw(data: &[u8]) -> Result<String, &'static str> {
+    let mut result = String::with_capacity(calculate_capacity(data).ok_or(OVERFLOW_ERROR)?);
+
+    unsafe {
+        encode(data, &mut result);
+    }
+
     Ok(result)
 }
 

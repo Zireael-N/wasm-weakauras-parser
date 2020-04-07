@@ -1,0 +1,29 @@
+name: ci
+on:
+  push:
+    branches:
+    - master
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Install wasm-pack
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f
+
+    - name: Build the binary and push it to gh-pages
+      run: ./build.sh
+      env:
+        SSH_KEY: ${{ secrets.SSH_KEY }}

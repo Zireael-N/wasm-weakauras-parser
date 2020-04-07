@@ -12,10 +12,14 @@ export GIT_AUTHOR_DATE="$(git log -n1 --format='%aI')"
 export GIT_COMMITTER_DATE="$(git log -n1 --format='%cI')"
 
 set +x
-if [[ "${GIT_REMOTE:+1}" && "${SSH_KEY:+1}" ]]; then
+if [[ "${SSH_KEY:+1}" ]]; then
+	if [[ -z "${GIT_REMOTE:+1}" ]]; then
+		GIT_REMOTE="$(git remote get-url origin | sed -E 's|https?://([^/]+)/(.*)|git@\1:\2|g')"
+	fi
+	mkdir ~/.ssh
 	echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
 	eval $(ssh-agent -s)
-	echo "${SSH_KEY}" | base64 -d | ssh-add -
+	echo "${SSH_KEY}" | ssh-add -
 fi
 set -x
 
@@ -33,8 +37,8 @@ if [[ "${GIT_REMOTE:+1}" ]]; then
 	git init
 	git checkout --orphan gh-pages
 	git add .
-	git config user.name "${GIT_NAME:-Travis CI}"
-	git config user.email "${GIT_EMAIL:-travisci@localhost}"
+	git config user.name "${GIT_NAME:-GitHub Actions}"
+	git config user.email "${GIT_EMAIL:-githubci@localhost}"
 	git commit -m "gh-pages"
 	git remote add origin "${GIT_REMOTE}"
 	git push -f -u origin gh-pages

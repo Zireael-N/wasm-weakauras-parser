@@ -7,8 +7,14 @@ pub mod base64;
 #[cfg(fuzzing)]
 pub mod huffman;
 
+#[cfg(not(fuzzing))]
 mod deserialization;
+#[cfg(not(fuzzing))]
 mod serialization;
+#[cfg(fuzzing)]
+pub mod deserialization;
+#[cfg(fuzzing)]
+pub mod serialization;
 mod value;
 
 use deserialization::Deserializer;

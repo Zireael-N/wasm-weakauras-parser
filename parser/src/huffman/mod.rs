@@ -11,6 +11,8 @@ use lookup_table::{build_lookup_table, TableData};
 use std::borrow::Cow;
 use utils::{get_code, unescape_code};
 
+const GENERIC_ERROR: &'static str = "decompression error";
+
 pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static str> {
     let mut iter = bytes.iter();
     match iter.next() {
@@ -24,7 +26,12 @@ pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static 
         return Err("insufficient data");
     }
 
-    let num_symbols = iter.next().unwrap() + 1;
+    let num_symbols = iter
+        .next()
+        .unwrap()
+        .checked_add(1)
+        .ok_or(GENERIC_ERROR)?;
+
     let original_size = iter
         .by_ref()
         .take(3)
@@ -52,7 +59,7 @@ pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static 
         loop {
             bitfield
                 .insert(*iter.next().ok_or("unexpected end of input")?)
-                .map_err(|_| "compression error")?;
+                .map_err(|_| GENERIC_ERROR)?;
 
             if let Some(v) = get_code(&mut bitfield)? {
                 let (code, code_len) = unescape_code(v.0, v.1);
@@ -70,8 +77,9 @@ pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static 
     // Decompression:
     let lut = build_lookup_table(&codes)?;
 
-    'outer: loop {
+    loop {
         bitfield.fill_from_iterator(&mut iter);
+        let original_len = bitfield.get_len();
 
         if bitfield.get_len() >= min_code_len {
             let mut cursor = &lut[(bitfield.peek_byte()) as usize];
@@ -82,23 +90,19 @@ pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static 
 
             let mut new_bitfield = bitfield;
             while new_bitfield.get_len() >= cursor.code_length {
+                if cursor.code_length == 0 {
+                    return Err(GENERIC_ERROR);
+                }
+
                 match cursor.data {
                     TableData::Reference(ref v) => {
                         new_bitfield.discard_bits(cursor.code_length);
                         cursor = &v[(new_bitfield.peek_byte()) as usize];
                     }
                     TableData::Symbol(s) => {
-                        if cursor.code_length == 0 {
-                            if bitfield.get_len() > max_code_len {
-                                return Err("compression error");
-                            } else {
-                                break;
-                            }
-                        }
-
                         result.push(s);
                         if result.len() == original_size {
-                            break 'outer;
+                            return Ok(Cow::from(result));
                         }
 
                         bitfield = new_bitfield;
@@ -110,7 +114,15 @@ pub(crate) fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static 
         } else {
             break;
         }
+
+        if bitfield.get_len() == original_len {
+            return Err(GENERIC_ERROR);
+        }
     }
 
-    Ok(Cow::from(result))
+    if result.len() == original_size {
+        Ok(Cow::from(result))
+    } else {
+        Err(GENERIC_ERROR)
+    }
 }

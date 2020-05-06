@@ -52,7 +52,7 @@ unsafe fn encode(data: &[u8], result: &mut String) {
 }
 
 #[allow(dead_code)]
-pub(crate) fn encode_weakaura(data: &[u8]) -> Result<String, &'static str> {
+pub fn encode_weakaura(data: &[u8]) -> Result<String, &'static str> {
     let mut result = String::with_capacity(
         calculate_capacity(data)
             .and_then(|len| len.checked_add(1))
@@ -68,7 +68,7 @@ pub(crate) fn encode_weakaura(data: &[u8]) -> Result<String, &'static str> {
 }
 
 #[allow(dead_code)]
-pub(crate) fn encode_raw(data: &[u8]) -> Result<String, &'static str> {
+pub fn encode_raw(data: &[u8]) -> Result<String, &'static str> {
     let mut result = String::with_capacity(calculate_capacity(data).ok_or(OVERFLOW_ERROR)?);
 
     unsafe {

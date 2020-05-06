@@ -1,3 +1,6 @@
+#[cfg(fuzzing)]
+pub mod base64;
+#[cfg(not(fuzzing))]
 mod base64;
 mod huffman;
 

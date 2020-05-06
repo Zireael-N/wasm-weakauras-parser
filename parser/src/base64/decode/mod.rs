@@ -35,7 +35,7 @@ fn calculate_capacity(s: &str) -> Result<usize, &'static str> {
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature = "ssse3"
 ))]
-pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
+pub fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let mut buffer = Vec::with_capacity(calculate_capacity(s)?);
     unsafe {
         sse::decode(s.as_bytes(), &mut buffer)?;
@@ -50,7 +50,7 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
         not(target_feature = "ssse3")
     )
 ))]
-pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
+pub fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let mut buffer = Vec::with_capacity(calculate_capacity(s)?);
     unsafe {
         scalar::decode(s.as_bytes(), &mut buffer)?;
@@ -59,7 +59,7 @@ pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
 }
 
 #[cfg(not(feature = "unsafe"))]
-pub(crate) fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
+pub fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let mut buffer = Vec::with_capacity(calculate_capacity(s)?);
     scalar::decode(s.as_bytes(), &mut buffer)?;
     Ok(buffer)

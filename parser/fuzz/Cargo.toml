@@ -21,3 +21,7 @@ members = ["."]
 [[bin]]
 name = "b64_roundtrip"
 path = "fuzz_targets/b64_roundtrip.rs"
+
+[[bin]]
+name = "huffman_decompression"
+path = "fuzz_targets/huffman_decompression.rs"

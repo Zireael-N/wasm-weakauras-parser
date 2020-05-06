@@ -1,8 +1,11 @@
-#[cfg(fuzzing)]
-pub mod base64;
 #[cfg(not(fuzzing))]
 mod base64;
+#[cfg(not(fuzzing))]
 mod huffman;
+#[cfg(fuzzing)]
+pub mod base64;
+#[cfg(fuzzing)]
+pub mod huffman;
 
 mod deserialization;
 mod serialization;

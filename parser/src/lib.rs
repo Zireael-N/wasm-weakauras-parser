@@ -1,18 +1,18 @@
 #[cfg(not(fuzzing))]
 mod base64;
-#[cfg(not(fuzzing))]
-mod huffman;
 #[cfg(fuzzing)]
 pub mod base64;
+#[cfg(not(fuzzing))]
+mod huffman;
 #[cfg(fuzzing)]
 pub mod huffman;
 
 #[cfg(not(fuzzing))]
 mod deserialization;
-#[cfg(not(fuzzing))]
-mod serialization;
 #[cfg(fuzzing)]
 pub mod deserialization;
+#[cfg(not(fuzzing))]
+mod serialization;
 #[cfg(fuzzing)]
 pub mod serialization;
 mod value;
@@ -21,9 +21,9 @@ use deserialization::Deserializer;
 use serialization::Serializer;
 pub use value::LuaValue;
 
-use deflate::{self, Compression};
-use inflate;
 use std::borrow::Cow;
+
+const MAX_SIZE: usize = 16 * 1024 * 1024;
 
 /// Takes a string encoded by WeakAuras and returns
 /// a Vec of [LuaValues](enum.LuaValue.html).
@@ -37,10 +37,29 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
 
     let data = base64::decode(data)?;
     let decoded = if legacy {
-        huffman::decompress(&data)?
+        huffman::decompress(&data)
     } else {
-        Cow::from(inflate::inflate_bytes(&data).map_err(|_| "failed to INFLATE")?)
-    };
+        use flate2::read::DeflateDecoder;
+        use std::io::prelude::*;
+
+        let mut result = Vec::new();
+        let mut inflater = DeflateDecoder::new(&data[..]).take(MAX_SIZE as u64);
+
+        inflater
+            .read_to_end(&mut result)
+            .map_err(|_| "failed to INFLATE")
+            .and_then(|_| {
+                if result.len() < MAX_SIZE {
+                    Ok(())
+                } else {
+                    match inflater.into_inner().bytes().next() {
+                        Some(_) => Err("compressed data is too large"),
+                        None => Ok(()),
+                    }
+                }
+            })
+            .map(|_| Cow::from(result))
+    }?;
 
     Deserializer::from_str(&String::from_utf8_lossy(&decoded)).deserialize()
 }
@@ -49,6 +68,17 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
 /// a string that can be decoded by WeakAuras.
 pub fn encode(value: &LuaValue) -> Result<String, &'static str> {
     Serializer::serialize(value, None)
-        .map(|serialized| deflate::deflate_bytes_conf(serialized.as_bytes(), Compression::Best))
+        .and_then(|serialized| {
+            use flate2::{read::DeflateEncoder, Compression};
+            use std::io::prelude::*;
+
+            let mut result = Vec::new();
+            let mut deflater = DeflateEncoder::new(serialized.as_bytes(), Compression::best());
+
+            deflater
+                .read_to_end(&mut result)
+                .map(|_| result)
+                .map_err(|_| "failed to DEFLATE")
+        })
         .and_then(|compressed| base64::encode_weakaura(&compressed))
 }

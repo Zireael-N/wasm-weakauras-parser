@@ -9,8 +9,7 @@ license = "MIT"
 unsafe = []
 
 [dependencies]
-deflate = "0.8.4"
-inflate = "0.4.5"
+flate2 = "1.0.14"
 
 itoa = "0.4.5"
 ryu = "1.0.3"

@@ -11,26 +11,22 @@ use lookup_table::{build_lookup_table, TableData};
 use std::borrow::Cow;
 use utils::{get_code, unescape_code};
 
-const GENERIC_ERROR: &'static str = "decompression error";
+const GENERIC_ERROR: &'static str = "Decompression error";
 
 pub fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static str> {
     let mut iter = bytes.iter();
     match iter.next() {
         Some(1) => return Ok(Cow::from(&bytes[1..])),
         Some(3) => (),
-        _ => return Err("unknown compression codec"),
+        _ => return Err("Unknown compression codec"),
     }
 
     let len = bytes.len();
     if len < 5 {
-        return Err("insufficient data");
+        return Err("Insufficient data");
     }
 
-    let num_symbols = iter
-        .next()
-        .unwrap()
-        .checked_add(1)
-        .ok_or(GENERIC_ERROR)?;
+    let num_symbols = iter.next().unwrap().checked_add(1).ok_or(GENERIC_ERROR)?;
 
     let original_size = iter
         .by_ref()
@@ -40,7 +36,7 @@ pub fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static str> {
         .fold(0, |acc, (i, byte)| acc + (byte << (i * 8)));
 
     if original_size == 0 {
-        return Err("insufficient data");
+        return Err("Insufficient data");
     }
 
     let mut codes = Vec::with_capacity(num_symbols as usize);
@@ -53,12 +49,11 @@ pub fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static str> {
 
     // Code extraction:
     for _ in 0..num_symbols {
-        let symbol =
-            bitfield.insert_and_extract_byte(*iter.next().ok_or("unexpected end of input")?);
+        let symbol = bitfield.insert_and_extract_byte(*iter.next().ok_or("Unexpected EOF")?);
 
         loop {
             bitfield
-                .insert(*iter.next().ok_or("unexpected end of input")?)
+                .insert(*iter.next().ok_or("Unexpected EOF")?)
                 .map_err(|_| GENERIC_ERROR)?;
 
             if let Some(v) = get_code(&mut bitfield)? {

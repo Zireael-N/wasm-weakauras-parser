@@ -8,35 +8,43 @@ mod huffman;
 pub mod huffman;
 
 #[cfg(not(fuzzing))]
-mod deserialization;
+mod ace_serialize;
 #[cfg(fuzzing)]
-pub mod deserialization;
-#[cfg(not(fuzzing))]
-mod serialization;
-#[cfg(fuzzing)]
-pub mod serialization;
+pub mod ace_serialize;
+
+mod lib_serialize;
 mod value;
 
-use deserialization::Deserializer;
-use serialization::Serializer;
+use ace_serialize::deserialization::Deserializer as LegacyDeserializer;
+use ace_serialize::serialization::Serializer;
+use lib_serialize::deserialization::Deserializer;
 pub use value::LuaValue;
 
 use std::borrow::Cow;
 
 const MAX_SIZE: usize = 16 * 1024 * 1024;
 
+enum StringVersion {
+    Huffman,             // base64
+    Deflate,             // ! + base64
+    BinarySerialization, // !WA:\d+! + base64
+}
+
 /// Takes a string encoded by WeakAuras and returns
 /// a Vec of [LuaValues](enum.LuaValue.html).
 pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
-    let legacy = if data.starts_with('!') {
+    let version = if data.starts_with("!WA:2!") {
+        data = &data[6..];
+        StringVersion::BinarySerialization
+    } else if data.starts_with('!') {
         data = &data[1..];
-        false
+        StringVersion::Deflate
     } else {
-        true
+        StringVersion::Huffman
     };
 
     let data = base64::decode(data)?;
-    let decoded = if legacy {
+    let decoded = if let StringVersion::Huffman = version {
         huffman::decompress(&data)
     } else {
         use flate2::read::DeflateDecoder;
@@ -61,7 +69,11 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
             .map(|_| Cow::from(result))
     }?;
 
-    Deserializer::from_str(&String::from_utf8_lossy(&decoded)).deserialize()
+    if let StringVersion::BinarySerialization = version {
+        Deserializer::from_slice(&decoded).deserialize()
+    } else {
+        LegacyDeserializer::from_str(&String::from_utf8_lossy(&decoded)).deserialize()
+    }
 }
 
 /// Takes a [LuaValue](enum.LuaValue.html) and returns

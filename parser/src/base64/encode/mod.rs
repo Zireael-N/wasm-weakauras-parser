@@ -12,7 +12,7 @@ mod scalar;
 ))]
 mod sse;
 
-const OVERFLOW_ERROR: &str = "cannot calculate capacity without overflowing";
+const OVERFLOW_ERROR: &str = "Cannot calculate capacity without overflowing";
 
 #[inline(always)]
 fn calculate_capacity(data: &[u8]) -> Option<usize> {

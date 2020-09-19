@@ -44,7 +44,7 @@ impl Serializer {
             ($($body:tt)*) => {
                 self.remaining_depth -= 1;
                 if self.remaining_depth == 0 {
-                    return Err("recursion limit exceeded");
+                    return Err("Recursion limit exceeded");
                 }
 
                 $($body)*
@@ -110,9 +110,9 @@ impl Serializer {
                 if sign < 0 {
                     self.result.push_str("-");
                 }
-                itoa::fmt(&mut self.result, mantissa).map_err(|_| "failed writing to a string")?;
+                itoa::fmt(&mut self.result, mantissa).map_err(|_| "Failed writing to a string")?;
                 self.result.push_str("^f");
-                itoa::fmt(&mut self.result, exponent).map_err(|_| "failed writing to a string")?;
+                itoa::fmt(&mut self.result, exponent).map_err(|_| "Failed writing to a string")?;
             }
         }
 

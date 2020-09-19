@@ -11,17 +11,19 @@ use serde::{
     ser::{Serialize, Serializer},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 /// A tagged union representing all
 /// possible values in Lua.
 pub enum LuaValue {
     Map(Map<LuaMapKey, LuaValue>),
+    Array(Vec<LuaValue>),
     String(String),
     Number(f64),
     Boolean(bool),
     Null,
 }
 
+#[derive(Clone)]
 pub struct LuaMapKey(LuaValue);
 impl LuaMapKey {
     #[inline(always)]
@@ -43,6 +45,7 @@ impl Hash for LuaValue {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             LuaValue::Map(m) => state.write_usize(m as *const _ as usize),
+            LuaValue::Array(v) => state.write_usize(v as *const _ as usize),
             LuaValue::String(s) => s.hash(state),
             LuaValue::Number(n) => state.write_u64(n.to_bits()),
             LuaValue::Boolean(b) => b.hash(state),
@@ -68,15 +71,26 @@ impl PartialOrd for LuaValue {
             (_, LuaValue::Number(_)) => Ordering::Less,
             (LuaValue::String(s1), LuaValue::String(s2)) => s1.cmp(s2),
             (LuaValue::String(_), LuaValue::Boolean(_))
-            | (LuaValue::String(_), LuaValue::Map(_)) => Ordering::Greater,
+            | (LuaValue::String(_), LuaValue::Map(_))
+            | (LuaValue::String(_), LuaValue::Array(_)) => Ordering::Greater,
             (LuaValue::Boolean(_), LuaValue::String(_))
-            | (LuaValue::Map(_), LuaValue::String(_)) => Ordering::Less,
+            | (LuaValue::Map(_), LuaValue::String(_))
+            | (LuaValue::Array(_), LuaValue::String(_)) => Ordering::Less,
             (LuaValue::Boolean(b1), LuaValue::Boolean(b2)) => b1.cmp(b2),
-            (LuaValue::Boolean(_), LuaValue::Map(_)) => Ordering::Greater,
-            (LuaValue::Map(_), LuaValue::Boolean(_)) => Ordering::Less,
+            (LuaValue::Boolean(_), LuaValue::Map(_))
+            | (LuaValue::Boolean(_), LuaValue::Array(_)) => Ordering::Greater,
+            (LuaValue::Map(_), LuaValue::Boolean(_))
+            | (LuaValue::Array(_), LuaValue::Boolean(_)) => Ordering::Less,
             (LuaValue::Map(m1), LuaValue::Map(m2)) => {
                 let p1 = m1 as *const _ as usize;
                 let p2 = m2 as *const _ as usize;
+                p1.cmp(&p2)
+            }
+            (LuaValue::Map(_), LuaValue::Array(_)) => Ordering::Greater,
+            (LuaValue::Array(_), LuaValue::Map(_)) => Ordering::Less,
+            (LuaValue::Array(v1), LuaValue::Array(v2)) => {
+                let p1 = v1 as *const _ as usize;
+                let p2 = v2 as *const _ as usize;
                 p1.cmp(&p2)
             }
             (LuaValue::Null, LuaValue::Null) => Ordering::Equal,
@@ -96,6 +110,11 @@ impl PartialEq for LuaValue {
             (LuaValue::Map(m1), LuaValue::Map(m2)) => {
                 let p1 = m1 as *const _ as usize;
                 let p2 = m2 as *const _ as usize;
+                p1.eq(&p2)
+            }
+            (LuaValue::Array(v1), LuaValue::Array(v2)) => {
+                let p1 = v1 as *const _ as usize;
+                let p2 = v2 as *const _ as usize;
                 p1.eq(&p2)
             }
             (LuaValue::String(s1), LuaValue::String(s2)) => s1.eq(s2),
@@ -142,6 +161,7 @@ impl LuaMapKey {
             LuaValue::Number(v) => Cow::from(v.to_string()),
             LuaValue::Boolean(v) => Cow::from(v.to_string()),
             LuaValue::Map(ref m) => Cow::from(format!("map at {:p}", m)),
+            LuaValue::Array(ref m) => Cow::from(format!("array at {:p}", m)),
             LuaValue::Null => unsafe { core::hint::unreachable_unchecked() },
         }
     }
@@ -161,7 +181,7 @@ impl Serialize for LuaValue {
     where
         S: Serializer,
     {
-        use serde::ser::SerializeMap;
+        use serde::ser::{SerializeMap, SerializeSeq};
 
         match self {
             LuaValue::String(s) => serializer.serialize_str(s),
@@ -174,6 +194,13 @@ impl Serialize for LuaValue {
                     map.serialize_entry(&LuaMapKey::to_string(k), v)?;
                 }
                 map.end()
+            }
+            LuaValue::Array(v) => {
+                let mut seq = serializer.serialize_seq(Some(v.len()))?;
+                for el in v {
+                    seq.serialize_element(el)?;
+                }
+                seq.end()
             }
         }
     }
@@ -249,18 +276,13 @@ impl<'de> Deserialize<'de> for LuaValue {
             where
                 V: SeqAccess<'de>,
             {
-                let mut result = Map::with_capacity(seq.size_hint().unwrap_or(16));
-                let mut index = 1;
+                let mut result = Vec::with_capacity(seq.size_hint().unwrap_or(16));
 
                 while let Some(element) = seq.next_element()? {
-                    result.insert(
-                        LuaMapKey::from_value(LuaValue::Number(index as f64)).unwrap(),
-                        element,
-                    );
-                    index += 1;
+                    result.push(element);
                 }
 
-                Ok(LuaValue::Map(result))
+                Ok(LuaValue::Array(result))
             }
 
             fn visit_map<V>(self, mut map: V) -> Result<LuaValue, V::Error>

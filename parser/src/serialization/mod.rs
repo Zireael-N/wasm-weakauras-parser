@@ -61,6 +61,16 @@ impl Serializer {
                 self.serialize_string(s)
             }
             LuaValue::Number(n) => self.serialize_number(n)?,
+            LuaValue::Array(ref v) => {
+                self.result.reserve(v.len() * 6 + 4);
+
+                self.result.push_str("^T");
+                for (value, index) in v.iter().zip(1..) {
+                    self.serialize_number(index as f64)?;
+                    self.serialize_helper(value)?;
+                }
+                self.result.push_str("^t");
+            }
             LuaValue::Map(ref m) => {
                 self.result.reserve(m.len() * 6 + 4);
 

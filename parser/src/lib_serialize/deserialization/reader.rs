@@ -37,7 +37,7 @@ impl<'s> SliceReader<'s> {
     pub(crate) fn read_int(&mut self, bytes: usize) -> Option<u64> {
         if (bytes > 0 && bytes <= 8) && (self.index + bytes - 1 < self.buffer.len()) {
             let mut buf = [0; 8];
-            &buf[8 - bytes..].copy_from_slice(&self.buffer[self.index..self.index + bytes]);
+            buf[8 - bytes..].copy_from_slice(&self.buffer[self.index..self.index + bytes]);
             self.index += bytes;
 
             Some(u64::from_be_bytes(buf))

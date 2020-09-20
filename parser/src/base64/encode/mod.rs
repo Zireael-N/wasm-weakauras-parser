@@ -55,10 +55,10 @@ unsafe fn encode(data: &[u8], result: &mut String) {
 pub fn encode_weakaura(data: &[u8]) -> Result<String, &'static str> {
     let mut result = String::with_capacity(
         calculate_capacity(data)
-            .and_then(|len| len.checked_add(1))
+            .and_then(|len| len.checked_add(6))
             .ok_or(OVERFLOW_ERROR)?,
     );
-    result.push('!');
+    result.push_str("!WA:2!");
 
     unsafe {
         encode(data, &mut result);

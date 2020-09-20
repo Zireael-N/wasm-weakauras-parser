@@ -16,8 +16,9 @@ mod lib_serialize;
 mod value;
 
 use ace_serialize::deserialization::Deserializer as LegacyDeserializer;
-use ace_serialize::serialization::Serializer;
+// use ace_serialize::serialization::Serializer;
 use lib_serialize::deserialization::Deserializer;
+use lib_serialize::serialization::Serializer;
 pub use value::LuaValue;
 
 use std::borrow::Cow;
@@ -85,7 +86,7 @@ pub fn encode(value: &LuaValue) -> Result<String, &'static str> {
             use std::io::prelude::*;
 
             let mut result = Vec::new();
-            let mut deflater = DeflateEncoder::new(serialized.as_bytes(), Compression::best());
+            let mut deflater = DeflateEncoder::new(serialized.as_slice(), Compression::best());
 
             deflater
                 .read_to_end(&mut result)

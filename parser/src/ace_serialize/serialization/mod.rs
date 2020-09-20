@@ -1,6 +1,4 @@
 use crate::value::LuaValue;
-use itoa;
-use ryu;
 
 #[cfg_attr(feature = "cargo-clippy", allow(clippy::unreadable_literal))]
 fn f64_to_parts(v: f64) -> (u64, i16, i8) {

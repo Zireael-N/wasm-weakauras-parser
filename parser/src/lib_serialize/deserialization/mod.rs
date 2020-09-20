@@ -1,11 +1,6 @@
 mod reader;
 
-#[allow(dead_code)]
-pub const MAJOR: &str = "LibSerialize";
-#[allow(dead_code)]
-pub const MINOR: u8 = 1;
-
-use crate::lib_serialize::{EmbeddedTypeTag, TypeTag};
+use super::{EmbeddedTypeTag, TypeTag, MINOR};
 use crate::value::{LuaMapKey, LuaValue, Map};
 use reader::SliceReader;
 
@@ -58,7 +53,7 @@ impl<'s> Deserializer<'s> {
 
     fn deserialize_helper(&mut self) -> Result<Option<LuaValue>, &'static str> {
         match self.reader.read_u8() {
-            None => return Ok(None),
+            None => Ok(None),
             Some(value) => {
                 if value & 1 == 1 {
                     // `NNNN NNN1`: a 7 bit non-negative int

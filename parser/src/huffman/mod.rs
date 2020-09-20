@@ -11,7 +11,7 @@ use lookup_table::{build_lookup_table, TableData};
 use std::borrow::Cow;
 use utils::{get_code, unescape_code};
 
-const GENERIC_ERROR: &'static str = "Decompression error";
+const GENERIC_ERROR: &str = "Decompression error";
 
 pub fn decompress<'a>(bytes: &'a [u8]) -> Result<Cow<'a, [u8]>, &'static str> {
     let mut iter = bytes.iter();

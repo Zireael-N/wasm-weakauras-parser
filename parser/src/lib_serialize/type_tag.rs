@@ -17,6 +17,7 @@ impl EmbeddedTypeTag {
         }
     }
 
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::wrong_self_convention))]
     pub(crate) fn to_u8(self) -> u8 {
         // SAFETY: safe due to #[repr(u8)]
         unsafe { std::mem::transmute(self) }
@@ -79,6 +80,7 @@ impl TypeTag {
         }
     }
 
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::wrong_self_convention))]
     pub(crate) fn to_u8(self) -> u8 {
         // SAFETY: safe due to #[repr(u8)]
         unsafe { std::mem::transmute(self) }

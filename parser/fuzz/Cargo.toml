@@ -27,5 +27,9 @@ name = "huffman_decompression"
 path = "fuzz_targets/huffman_decompression.rs"
 
 [[bin]]
-name = "serialization"
-path = "fuzz_targets/serialization.rs"
+name = "serialization_ace_serialize"
+path = "fuzz_targets/serialization_ace_serialize.rs"
+
+[[bin]]
+name = "serialization_lib_serialize"
+path = "fuzz_targets/serialization_lib_serialize.rs"

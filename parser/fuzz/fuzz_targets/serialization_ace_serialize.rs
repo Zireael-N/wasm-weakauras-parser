@@ -1,6 +1,6 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
-use weakauras_parser::ace_serialize::{deserialization::Deserializer, serialization::Serializer};
+use weakauras_parser::ace_serialize::{Deserializer, Serializer};
 
 fuzz_target!(|data: &[u8]| {
     if let Ok(data) = std::str::from_utf8(data) {

@@ -12,13 +12,15 @@ mod ace_serialize;
 #[cfg(fuzzing)]
 pub mod ace_serialize;
 
+#[cfg(not(fuzzing))]
 mod lib_serialize;
+#[cfg(fuzzing)]
+pub mod lib_serialize;
+
 mod value;
 
-use ace_serialize::deserialization::Deserializer as LegacyDeserializer;
-// use ace_serialize::serialization::Serializer;
-use lib_serialize::deserialization::Deserializer;
-use lib_serialize::serialization::Serializer;
+use ace_serialize::Deserializer as LegacyDeserializer;
+use lib_serialize::{Deserializer, Serializer};
 pub use value::LuaValue;
 
 use std::borrow::Cow;

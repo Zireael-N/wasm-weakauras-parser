@@ -1,6 +1,6 @@
 mod reader;
 
-use crate::value::{LuaMapKey, LuaValue, Map};
+use crate::value::{LuaMapKey, LuaValue};
 use reader::StrReader;
 
 pub struct Deserializer<'s> {
@@ -94,7 +94,8 @@ impl<'s> Deserializer<'s> {
                 LuaValue::Number(mantissa * (2f64.powf(exponent)))
             }
             "^T" => {
-                let mut map = Map::default();
+                let mut keys = Vec::with_capacity(16);
+                let mut values = Vec::with_capacity(16);
                 loop {
                     match self.reader.peek_identifier()? {
                         "^t" => {
@@ -108,12 +109,27 @@ impl<'s> Deserializer<'s> {
                                     "^t" => return Err("Unexpected end of a table"),
                                     _ => self.deserialize_helper()?.ok_or("Missing value")?,
                                 };
-                                map.insert(key, value);
+                                keys.push(key);
+                                values.push(value);
                             }
                         }
                     }
                 }
-                LuaValue::Map(map)
+
+                debug_assert_eq!(keys.len(), values.len());
+                let is_array = keys.iter().enumerate().all(|(i, key)| {
+                    if let LuaValue::Number(key) = key.as_value() {
+                        *key == (i + 1) as f64
+                    } else {
+                        false
+                    }
+                });
+
+                if is_array {
+                    LuaValue::Array(values)
+                } else {
+                    LuaValue::Map(keys.into_iter().zip(values.into_iter()).collect())
+                }
             }
             _ => return Err("Invalid identifier"),
         }))

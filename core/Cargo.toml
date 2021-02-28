@@ -6,7 +6,6 @@ edition = "2018"
 license = "MIT"
 
 [features]
-unsafe = ["wa_base64/unsafe"]
 fnv = ["lua_value/fnv"]
 indexmap = ["lua_value/indexmap"]
 serde = ["lua_value/serde"]

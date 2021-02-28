@@ -1,16 +1,33 @@
 #[cfg(all(
-    test,
+    any(feature = "avx2", test),
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature = "avx2"
 ))]
 mod avx2;
 mod scalar;
 #[cfg(all(
-    any(feature = "unsafe", test),
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature = "ssse3"
 ))]
 mod sse;
+
+#[cfg(all(
+    feature = "expose_internals",
+    any(feature = "avx2", test),
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "avx2"
+))]
+pub use avx2::decode as decode_avx2;
+
+#[cfg(all(
+    feature = "expose_internals",
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "ssse3"
+))]
+pub use sse::decode as decode_sse;
+
+#[cfg(feature = "expose_internals")]
+pub use scalar::decode as decode_scalar;
 
 #[inline(always)]
 fn calculate_capacity(s: &str) -> Result<usize, &'static str> {
@@ -31,7 +48,6 @@ fn calculate_capacity(s: &str) -> Result<usize, &'static str> {
 }
 
 #[cfg(all(
-    feature = "unsafe",
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature = "ssse3"
 ))]
@@ -43,25 +59,15 @@ pub fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     Ok(buffer)
 }
 
-#[cfg(all(
-    feature = "unsafe",
-    any(
-        not(any(target_arch = "x86", target_arch = "x86_64")),
-        not(target_feature = "ssse3")
-    )
+#[cfg(any(
+    not(any(target_arch = "x86", target_arch = "x86_64")),
+    not(target_feature = "ssse3")
 ))]
 pub fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
     let mut buffer = Vec::with_capacity(calculate_capacity(s)?);
     unsafe {
         scalar::decode(s.as_bytes(), &mut buffer)?;
     }
-    Ok(buffer)
-}
-
-#[cfg(not(feature = "unsafe"))]
-pub fn decode(s: &str) -> Result<Vec<u8>, &'static str> {
-    let mut buffer = Vec::with_capacity(calculate_capacity(s)?);
-    scalar::decode(s.as_bytes(), &mut buffer)?;
     Ok(buffer)
 }
 

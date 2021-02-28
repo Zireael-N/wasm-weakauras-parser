@@ -1,16 +1,33 @@
 #[cfg(all(
-    test,
+    any(feature = "avx2", test),
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature = "avx2"
 ))]
 mod avx2;
 mod scalar;
 #[cfg(all(
-    any(feature = "unsafe", test),
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature = "ssse3"
 ))]
 mod sse;
+
+#[cfg(all(
+    feature = "expose_internals",
+    any(feature = "avx2", test),
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "avx2"
+))]
+pub use avx2::encode as encode_avx2;
+
+#[cfg(all(
+    feature = "expose_internals",
+    any(target_arch = "x86", target_arch = "x86_64"),
+    target_feature = "ssse3"
+))]
+pub use sse::encode as encode_sse;
+
+#[cfg(feature = "expose_internals")]
+pub use scalar::encode as encode_scalar;
 
 const OVERFLOW_ERROR: &str = "Cannot calculate capacity without overflowing";
 
@@ -30,7 +47,6 @@ fn calculate_capacity(data: &[u8]) -> Option<usize> {
 }
 
 #[cfg(all(
-    feature = "unsafe",
     any(target_arch = "x86", target_arch = "x86_64"),
     target_feature = "ssse3"
 ))]
@@ -41,7 +57,6 @@ unsafe fn encode(data: &[u8], result: &mut String) {
 }
 
 #[cfg(any(
-    not(feature = "unsafe"),
     not(any(target_arch = "x86", target_arch = "x86_64")),
     not(target_feature = "ssse3")
 ))]

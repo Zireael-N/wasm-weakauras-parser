@@ -9,14 +9,14 @@ use core::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
 
-#[cfg(all(test, target_feature = "avx2"))]
+#[cfg(all(any(feature = "avx2", test), target_feature = "avx2"))]
 #[cfg_attr(
     feature = "cargo-clippy",
     allow(clippy::cast_ptr_alignment, clippy::unreadable_literal)
 )]
 #[inline(always)]
 /// SAFETY: the caller must ensure that buf can hold AT LEAST ((s.len() * 4 + 2) / 3) more elements
-pub(crate) unsafe fn encode(s: &[u8], buf: &mut String) {
+pub unsafe fn encode(s: &[u8], buf: &mut String) {
     let mut len = s.len();
     let mut out_len = buf.len();
 

@@ -6,6 +6,18 @@ edition = "2018"
 license = "BSD-2-Clause"
 
 [features]
-unsafe = []
+avx2 = []
+expose_internals = []
 
 [dependencies]
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "decoding"
+harness = false
+
+[[bench]]
+name = "encoding"
+harness = false

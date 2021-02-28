@@ -9,7 +9,7 @@ license = "MIT"
 crate-type = ["cdylib"]
 
 [dependencies]
-weakauras_parser = { path = "../core", features = ["serde", "indexmap", "unsafe"] }
+weakauras_parser = { path = "../core", features = ["serde", "indexmap"] }
 wee_alloc = { version = "0.4.5", optional = true }
 wasm-bindgen = "0.2.68"
 js-sys = "0.3.45"

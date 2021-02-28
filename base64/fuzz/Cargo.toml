@@ -1,0 +1,23 @@
+[package]
+name = "weakauras_parser_base64-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.3"
+
+[dependencies.weakauras_parser_base64]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "roundtrip"
+path = "fuzz_targets/roundtrip.rs"

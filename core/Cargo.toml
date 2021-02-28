@@ -1,0 +1,22 @@
+[package]
+name = "weakauras_parser"
+version = "0.1.0"
+authors = ["Velithris <13710677+Zireael-N@users.noreply.github.com>"]
+edition = "2018"
+license = "MIT"
+
+[features]
+unsafe = ["wa_base64/unsafe"]
+fnv = ["lua_value/fnv"]
+indexmap = ["lua_value/indexmap"]
+serde = ["lua_value/serde"]
+
+[dependencies]
+flate2 = "1.0.17"
+
+itoa = "0.4.6"
+ryu = "1.0.5"
+
+wa_base64 = { path = "../base64", package = "weakauras_parser_base64" }
+huffman = { path = "../huffman", package = "weakauras_parser_huffman" }
+lua_value = { path = "../lua_value", package = "weakauras_parser_lua_value" }

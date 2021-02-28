@@ -1,0 +1,11 @@
+[package]
+name = "weakauras_parser_base64"
+version = "0.1.0"
+authors = ["Zireael <13710677+Zireael-N@users.noreply.github.com>"]
+edition = "2018"
+license = "BSD-2-Clause"
+
+[features]
+unsafe = []
+
+[dependencies]

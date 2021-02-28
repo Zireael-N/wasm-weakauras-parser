@@ -23,7 +23,7 @@ enum StringVersion {
 }
 
 /// Takes a string encoded by WeakAuras and returns
-/// a Vec of [LuaValues](enum.LuaValue.html).
+/// a Vec of [LuaValues](../weakauras_parser_lua_value/enum.LuaValue.html).
 pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
     let version = if data.starts_with("!WA:2!") {
         data = &data[6..];
@@ -68,7 +68,7 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
     }
 }
 
-/// Takes a [LuaValue](enum.LuaValue.html) and returns
+/// Takes a [LuaValue](../weakauras_parser_lua_value/enum.LuaValue.html) and returns
 /// a string that can be decoded by WeakAuras.
 pub fn encode(value: &LuaValue) -> Result<String, &'static str> {
     Serializer::serialize(value, None)

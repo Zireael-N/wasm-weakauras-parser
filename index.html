@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Parses strings encoded by a World of Warcraft AddOn called WeakAuras">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>WeakAuras' String Parser</title>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        html, body{
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #form{
+            max-width: 1280px;
+            height: 100%;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-rows: repeat(2, 1fr) 40px auto;
+            grid-gap: 16px;
+        }
+        #source, #destination{
+            resize: none;
+            padding: 8px;
+            font: 14px monospace;
+        }
+        #decode {
+            font: 16px/40px sans-serif;
+        }
+        #copyright {
+            text-align: center;
+        }
+    </style>
+    <script type="module" defer>
+        const worker = new Worker("./wasm_weakauras_parser.js");
+
+        const form = document.getElementById('form');
+        const source = document.getElementById('source');
+        const destination = document.getElementById('destination');
+        const button = document.getElementById('decode');
+
+        worker.onmessage = ({ data: { message, data } }) => {
+            switch (message) {
+                case 'failure':
+                    alert(`Failed to decode: ${data}`);
+                    break;
+                case 'completed':
+                    destination.value = data;
+                case 'initialized':
+                default:
+                    break;
+            }
+            button.disabled = false;
+            button.innerText = "Decode"
+        }
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+
+            if (!button.disabled) {
+                button.disabled = true;
+                button.innerText = "Decoding..."
+                worker.postMessage({
+                    action: 'decode',
+                    data: source.value,
+                });
+            }
+
+            return false;
+        });
+
+        window.encodeWA = data => {
+            worker.postMessage({
+                action: 'encode',
+                data,
+            });
+        };
+    </script>
+    <script nomodule>
+        alert("Unfortunately, your browser does not support JS modules!");
+    </script>
+</head>
+<body>
+    <form id="form">
+        <textarea
+            id="source"
+            aria-label="Encoded WA string"
+            placeholder="Enter a WA string here..." ></textarea>
+        <textarea
+            id="destination"
+            aria-label="Decoded data serialized as JSON"
+            placeholder="JSON representation"
+            readonly></textarea>
+        <button id="decode" type=submit disabled>Loading...</button>
+        <small id="copyright">This project uses algorithms from <a href="https://github.com/serde-rs/json">Serde JSON</a>, <a href="https://www.curseforge.com/wow/addons/libcompress">LibCompress</a>, <a href="https://github.com/lemire/fastbase64">github.com/lemire/fastbase64</a> and <a href="https://github.com/client9/stringencoders">github.com/client9/stringencoders</a></small>
+    </div>
+</body>
+</html>

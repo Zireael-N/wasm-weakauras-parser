@@ -64,6 +64,7 @@ impl Serializer {
         Ok(())
     }
 
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::manual_range_contains))]
     fn serialize_number(&mut self, value: f64) {
         const MAX_7_BIT: i64 = 72_057_594_037_927_936 - 1; // 2^56 - 1, `i64::pow` is not a `const fn` as of rustc 1.46
         const MAX_7_BIT_FLOAT: f64 = MAX_7_BIT as f64;
@@ -123,11 +124,6 @@ impl Serializer {
                 }
             }
         }
-    }
-
-    #[inline(always)]
-    fn serialize_float(&mut self, value: f64) {
-        self.result.extend_from_slice(&value.to_be_bytes());
     }
 
     fn serialize_int(&mut self, value: u64, len: usize) {

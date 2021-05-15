@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use lua_value::LuaValue;
 
 #[cfg_attr(feature = "cargo-clippy", allow(clippy::unreadable_literal))]
@@ -106,7 +107,7 @@ impl Serializer {
                 let (mantissa, exponent, sign) = f64_to_parts(value);
                 self.result.push_str("^F");
                 if sign < 0 {
-                    self.result.push_str("-");
+                    self.result.push('-');
                 }
                 itoa::fmt(&mut self.result, mantissa).map_err(|_| "Failed writing to a string")?;
                 self.result.push_str("^f");

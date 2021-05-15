@@ -52,6 +52,7 @@ impl<'s> Deserializer<'s> {
         self.deserialize_helper()
     }
 
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::float_cmp))]
     fn deserialize_helper(&mut self) -> Result<Option<LuaValue>, &'static str> {
         // Taken from serde_json
         macro_rules! check_recursion {

@@ -297,7 +297,7 @@ impl<'de> Deserialize<'de> for LuaValue {
                             Ok(n) => LuaValue::Number(n as f64),
                             Err(_) => LuaValue::String(s),
                         },
-                        v @ _ => v,
+                        v => v,
                     })
                     .map_err(de::Error::custom)?;
 

@@ -15,7 +15,7 @@ use core::arch::x86_64::*;
     allow(clippy::cast_ptr_alignment, clippy::unreadable_literal)
 )]
 #[inline(always)]
-/// SAFETY: the caller must ensure that buf can hold AT LEAST ((s.len() * 4 + 2) / 3) more elements
+/// SAFETY: the caller must ensure that `buf` can hold AT LEAST `(s.len() * 4 + 2) / 3` more elements
 pub unsafe fn encode(s: &[u8], buf: &mut String) {
     let mut len = s.len();
     let mut out_len = buf.len();

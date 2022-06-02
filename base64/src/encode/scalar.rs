@@ -1,9 +1,9 @@
 use crate::byte_map::ENCODE_LUT;
 
 #[inline(always)]
-/// SAFETY: the caller must ensure that buf can hold AT LEAST ((s.len() * 4 + 2) / 3) more elements
-pub unsafe fn encode(data: &[u8], buf: &mut String) {
-    let mut chunks = data.chunks_exact(3);
+/// SAFETY: the caller must ensure that `buf` can hold AT LEAST `(s.len() * 4 + 2) / 3` more elements
+pub unsafe fn encode(s: &[u8], buf: &mut String) {
+    let mut chunks = s.chunks_exact(3);
 
     let mut len = buf.len();
     let mut ptr = buf[len..].as_mut_ptr();

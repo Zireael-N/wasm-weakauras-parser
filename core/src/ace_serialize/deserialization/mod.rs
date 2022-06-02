@@ -1,5 +1,6 @@
 mod reader;
 
+use crate::macros::check_recursion;
 use lua_value::{LuaMapKey, LuaValue};
 use reader::StrReader;
 
@@ -54,20 +55,6 @@ impl<'s> Deserializer<'s> {
 
     #[cfg_attr(feature = "cargo-clippy", allow(clippy::float_cmp))]
     fn deserialize_helper(&mut self) -> Result<Option<LuaValue>, &'static str> {
-        // Taken from serde_json
-        macro_rules! check_recursion {
-            ($($body:tt)*) => {
-                self.remaining_depth -= 1;
-                if self.remaining_depth == 0 {
-                    return Err("Recursion limit exceeded");
-                }
-
-                $($body)*
-
-                self.remaining_depth += 1;
-            }
-        }
-
         Ok(Some(match self.reader.read_identifier()? {
             "^^" => return Ok(None),
             "^Z" => LuaValue::Null,
@@ -104,15 +91,18 @@ impl<'s> Deserializer<'s> {
                             break;
                         }
                         _ => {
-                            check_recursion! {
-                                let key = self.deserialize_helper()?.ok_or("Missing key").and_then(LuaMapKey::from_value)?;
+                            check_recursion!(self, {
+                                let key = self
+                                    .deserialize_helper()?
+                                    .ok_or("Missing key")
+                                    .and_then(LuaMapKey::from_value)?;
                                 let value = match self.reader.peek_identifier()? {
                                     "^t" => return Err("Unexpected end of a table"),
                                     _ => self.deserialize_helper()?.ok_or("Missing value")?,
                                 };
                                 keys.push(key);
                                 values.push(value);
-                            }
+                            });
                         }
                     }
                 }

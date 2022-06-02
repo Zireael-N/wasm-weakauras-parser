@@ -8,7 +8,7 @@ use crate::byte_map::{BAD_SYMBOL, DECODE_LUT0, DECODE_LUT1, DECODE_LUT2, DECODE_
 const INVALID_B64: &str = "failed to decode base64";
 
 #[inline(always)]
-/// SAFETY: the caller must ensure that buf can hold AT LEAST (s.len() * 3 / 4) more elements
+/// SAFETY: the caller must ensure that `buf` can hold AT LEAST `s.len() * 3 / 4` more elements
 pub unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static str> {
     let mut chunks = s.chunks_exact(4);
 

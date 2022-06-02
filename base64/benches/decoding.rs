@@ -1,6 +1,3 @@
-#[cfg(not(feature = "expose_internals"))]
-compile_error!("Please enable the \"expose_internals\" feature.");
-
 use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
 use weakauras_parser_base64 as wa_base64;
 

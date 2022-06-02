@@ -15,7 +15,7 @@ use core::arch::x86_64::*;
     allow(clippy::cast_ptr_alignment, clippy::unreadable_literal)
 )]
 #[inline(always)]
-/// SAFETY: the caller must ensure that buf can hold AT LEAST (s.len() * 3 / 4) more elements
+/// SAFETY: the caller must ensure that `buf` can hold AT LEAST `s.len() * 3 / 4` more elements
 pub unsafe fn decode(s: &[u8], buf: &mut Vec<u8>) -> Result<(), &'static str> {
     let mut len = s.len();
     let mut out_len = buf.len();

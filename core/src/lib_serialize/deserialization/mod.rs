@@ -1,6 +1,7 @@
 mod reader;
 
 use super::{EmbeddedTypeTag, TypeTag, MINOR};
+use crate::macros::check_recursion;
 use lua_value::{LuaMapKey, LuaValue, Map};
 use reader::SliceReader;
 
@@ -290,29 +291,12 @@ impl<'s> Deserializer<'s> {
     fn deserialize_map(&mut self, len: usize) -> Result<LuaValue, &'static str> {
         let mut m = Map::new();
 
-        // Taken from serde_json
-        macro_rules! check_recursion {
-            ($($body:tt)*) => {
-                self.remaining_depth -= 1;
-                if self.remaining_depth == 0 {
-                    return Err("Recursion limit exceeded");
-                }
-
-                $($body)*
-
-                self.remaining_depth += 1;
-            }
-        }
-
         for _ in 0..len {
-            check_recursion! {
+            check_recursion!(self, {
                 let (key, value) = (self.extract_value()?, self.extract_value()?);
 
-                m.insert(
-                    LuaMapKey::from_value(key)?,
-                    value,
-                );
-            }
+                m.insert(LuaMapKey::from_value(key)?, value);
+            });
         }
 
         let m = LuaValue::Map(m);
@@ -323,24 +307,10 @@ impl<'s> Deserializer<'s> {
     fn deserialize_array(&mut self, len: usize) -> Result<LuaValue, &'static str> {
         let mut v = Vec::new();
 
-        // Taken from serde_json
-        macro_rules! check_recursion {
-            ($($body:tt)*) => {
-                self.remaining_depth -= 1;
-                if self.remaining_depth == 0 {
-                    return Err("Recursion limit exceeded");
-                }
-
-                $($body)*
-
-                self.remaining_depth += 1;
-            }
-        }
-
         for _ in 0..len {
-            check_recursion! {
+            check_recursion!(self, {
                 v.push(self.extract_value()?);
-            }
+            });
         }
 
         let v = LuaValue::Array(v);
@@ -355,39 +325,22 @@ impl<'s> Deserializer<'s> {
     ) -> Result<LuaValue, &'static str> {
         let mut m = Map::new();
 
-        // Taken from serde_json
-        macro_rules! check_recursion {
-            ($($body:tt)*) => {
-                self.remaining_depth -= 1;
-                if self.remaining_depth == 0 {
-                    return Err("Recursion limit exceeded");
-                }
-
-                $($body)*
-
-                self.remaining_depth += 1;
-            }
-        }
-
         for i in 1..=array_len {
-            check_recursion! {
+            check_recursion!(self, {
                 let el = self.extract_value()?;
                 m.insert(
                     LuaMapKey::from_value(LuaValue::Number(i as f64)).unwrap(),
                     el,
                 );
-            }
+            });
         }
 
         for _ in 0..map_len {
-            check_recursion! {
+            check_recursion!(self, {
                 let (key, value) = (self.extract_value()?, self.extract_value()?);
 
-                m.insert(
-                    LuaMapKey::from_value(key)?,
-                    value,
-                );
-            }
+                m.insert(LuaMapKey::from_value(key)?, value);
+            });
         }
 
         let m = LuaValue::Map(m);

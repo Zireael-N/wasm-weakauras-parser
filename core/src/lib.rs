@@ -8,6 +8,8 @@ mod lib_serialize;
 #[cfg(fuzzing)]
 pub mod lib_serialize;
 
+mod macros;
+
 use ace_serialize::Deserializer as LegacyDeserializer;
 use lib_serialize::{Deserializer, Serializer};
 use lua_value::LuaValue;
@@ -16,6 +18,7 @@ use std::borrow::Cow;
 
 const MAX_SIZE: usize = 16 * 1024 * 1024;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum StringVersion {
     Huffman,             // base64
     Deflate,             // ! + base64
@@ -36,7 +39,7 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
     };
 
     let data = wa_base64::decode(data)?;
-    let decoded = if let StringVersion::Huffman = version {
+    let decoded = if version == StringVersion::Huffman {
         huffman::decompress(&data)
     } else {
         use flate2::read::DeflateDecoder;
@@ -61,7 +64,7 @@ pub fn decode(mut data: &str) -> Result<Vec<LuaValue>, &'static str> {
             .map(|_| Cow::from(result))
     }?;
 
-    if let StringVersion::BinarySerialization = version {
+    if version == StringVersion::BinarySerialization {
         Deserializer::from_slice(&decoded).deserialize()
     } else {
         LegacyDeserializer::from_str(&String::from_utf8_lossy(&decoded)).deserialize()

@@ -22,5 +22,5 @@ pub fn decode(wa_string: &str) -> Result<String, JsValue> {
 pub fn encode(json: &str) -> Result<String, JsValue> {
     serde_json::from_str(json)
         .map_err(|e| JsValue::from(JsError::new(&e.to_string())))
-        .and_then(|value| parser::encode(&value).map_err(|e| JsError::new(&e.to_string()).into()))
+        .and_then(|value| parser::encode(&value).map_err(|e| JsError::new(e).into()))
 }

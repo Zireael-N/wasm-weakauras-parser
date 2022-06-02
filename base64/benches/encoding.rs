@@ -1,6 +1,3 @@
-#[cfg(not(feature = "expose_internals"))]
-compile_error!("Please enable the \"expose_internals\" feature.");
-
 use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
 use weakauras_parser_base64 as wa_base64;
 
@@ -11,10 +8,7 @@ pub fn encoding_benchmark(c: &mut Criterion) {
     for size in [KB, 2 * KB, 4 * KB, 8 * KB, 16 * KB, 1024 * KB].iter() {
         group.throughput(Throughput::Bytes(*size as u64));
 
-        let data: Vec<_> = (0u8..=255u8)
-            .cycle()
-            .take(*size)
-            .collect();
+        let data: Vec<_> = (0u8..=255u8).cycle().take(*size).collect();
 
         let capacity = calculate_capacity(&data).unwrap();
 

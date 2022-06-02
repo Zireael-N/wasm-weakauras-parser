@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::macros::check_recursion;
 use lua_value::LuaValue;
 
 #[cfg_attr(feature = "cargo-clippy", allow(clippy::unreadable_literal))]
@@ -13,6 +14,15 @@ fn f64_to_parts(v: f64) -> (u64, i16, i8) {
     };
     exponent -= 1023 + 52;
     (mantissa, exponent, sign)
+}
+
+fn write_integer_to_a_string<I>(string: &mut String, value: I)
+where
+    I: itoa::Integer,
+{
+    let mut buffer = itoa::Buffer::new();
+    let serialized = buffer.format(value);
+    string.push_str(serialized)
 }
 
 pub struct Serializer {
@@ -38,20 +48,6 @@ impl Serializer {
     }
 
     fn serialize_helper(&mut self, value: &LuaValue) -> Result<(), &'static str> {
-        // Taken from serde_json
-        macro_rules! check_recursion {
-            ($($body:tt)*) => {
-                self.remaining_depth -= 1;
-                if self.remaining_depth == 0 {
-                    return Err("Recursion limit exceeded");
-                }
-
-                $($body)*
-
-                self.remaining_depth += 1;
-            }
-        }
-
         match *value {
             LuaValue::Null => self.result.push_str("^Z"),
             LuaValue::Boolean(b) => self.result.push_str(if b { "^B" } else { "^b" }),
@@ -75,10 +71,10 @@ impl Serializer {
 
                 self.result.push_str("^T");
                 for (key, value) in m.iter() {
-                    check_recursion! {
+                    check_recursion!(self, {
                         self.serialize_helper(key.as_value())?;
                         self.serialize_helper(value)?;
-                    }
+                    });
                 }
                 self.result.push_str("^t");
             }
@@ -109,9 +105,9 @@ impl Serializer {
                 if sign < 0 {
                     self.result.push('-');
                 }
-                itoa::fmt(&mut self.result, mantissa).map_err(|_| "Failed writing to a string")?;
+                write_integer_to_a_string(&mut self.result, mantissa);
                 self.result.push_str("^f");
-                itoa::fmt(&mut self.result, exponent).map_err(|_| "Failed writing to a string")?;
+                write_integer_to_a_string(&mut self.result, exponent);
             }
         }
 

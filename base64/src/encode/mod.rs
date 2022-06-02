@@ -51,7 +51,7 @@ fn calculate_capacity(data: &[u8]) -> Option<usize> {
     target_feature = "ssse3"
 ))]
 #[inline(always)]
-/// SAFETY: the caller must ensure that buf can hold AT LEAST ((s.len() * 4 + 2) / 3) more elements
+/// SAFETY: the caller must ensure that `result` can hold AT LEAST `(data.len() * 4 + 2) / 3` more elements
 unsafe fn encode(data: &[u8], result: &mut String) {
     sse::encode(data, result);
 }
@@ -61,7 +61,7 @@ unsafe fn encode(data: &[u8], result: &mut String) {
     not(target_feature = "ssse3")
 ))]
 #[inline(always)]
-/// SAFETY: the caller must ensure that buf can hold AT LEAST ((s.len() * 4 + 2) / 3) more elements
+/// SAFETY: the caller must ensure that `result` can hold AT LEAST `(data.len() * 4 + 2) / 3` more elements
 unsafe fn encode(data: &[u8], result: &mut String) {
     scalar::encode(data, result);
 }

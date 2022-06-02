@@ -26,8 +26,9 @@ set -x
 wasm-pack build --release --target web --out-dir dist
 
 # patch the .js-file
-sed -i -e '/^export default init;/ d' -e "/^[[:space:]]*if (typeof input === 'undefined')/,+2 d" -e 's/export //g' dist/wasm_weakauras_parser.js
-cat ./src/worker.js >> dist/wasm_weakauras_parser.js
+sed -i -e '/^export default init;/,+1 d' -e "/^[[:space:]]*if (typeof input === 'undefined')/,+2 d" -e 's/export //g' dist/wasm_weakauras_parser.js
+cat ./src/worker.js >> ./dist/wasm_weakauras_parser.js
+cp ./src/index.html ./dist/index.html
 
 # deploy to gh-pages
 if [[ "${GIT_REMOTE:+1}" ]]; then

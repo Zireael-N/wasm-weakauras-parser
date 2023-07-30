@@ -1,4 +1,4 @@
-init('./wasm_weakauras_parser_bg.wasm').then(() => self.postMessage({
+__wbg_init('./wasm_weakauras_parser_bg.wasm').then(() => self.postMessage({
     message: 'initialized',
     data: null,
 }));

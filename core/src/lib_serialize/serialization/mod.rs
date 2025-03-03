@@ -1,4 +1,4 @@
-use super::{EmbeddedTypeTag, TypeTag, MINOR};
+use super::{EmbeddedTypeTag, MINOR, TypeTag};
 use crate::macros::check_recursion;
 use lua_value::{LuaMapKey, LuaValue, Map};
 

@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput};
+use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use weakauras_parser_base64 as wa_base64;
 
 pub fn decoding_benchmark(c: &mut Criterion) {

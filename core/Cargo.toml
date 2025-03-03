@@ -19,3 +19,6 @@ ryu = "1"
 wa_base64 = { path = "../base64", package = "weakauras_parser_base64" }
 huffman = { path = "../huffman", package = "weakauras_parser_huffman" }
 lua_value = { path = "../lua_value", package = "weakauras_parser_lua_value" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }

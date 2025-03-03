@@ -44,8 +44,8 @@ pub fn decompress(bytes: &[u8]) -> Result<Cow<'_, [u8]>, &'static str> {
 
     let mut bitfield = Bitfield::new();
 
-    let mut min_code_len = std::u8::MAX;
-    let mut max_code_len = std::u8::MIN;
+    let mut min_code_len = u8::MAX;
+    let mut max_code_len = u8::MIN;
 
     // Code extraction:
     for _ in 0..num_symbols {

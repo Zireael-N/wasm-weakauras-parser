@@ -60,7 +60,7 @@ impl Serializer {
         Ok(())
     }
 
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::manual_range_contains))]
+    #[allow(clippy::manual_range_contains)]
     fn serialize_number(&mut self, value: f64) {
         const MAX_7_BIT: f64 = (2i64.pow(56) - 1) as f64;
 

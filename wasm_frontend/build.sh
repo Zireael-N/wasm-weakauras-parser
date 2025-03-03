@@ -26,7 +26,7 @@ set -x
 wasm-pack build --release --target web --out-dir dist
 
 # patch the .js-file
-sed -i -e '/^export { initSync }$/d' -e '/^export default __wbg_init;$/d' -e "/^[[:space:]]*if (typeof input === 'undefined')/,+2 d" -e 's/^export //g' dist/wasm_weakauras_parser.js
+sed -i -e '/^export { initSync };$/d' -e '/^export default __wbg_init;$/d' -e "/^[[:space:]]*if (typeof module_or_path === 'undefined')/,+2 d" -e 's/^export //g' dist/wasm_weakauras_parser.js
 cat ./src/worker.js >> ./dist/wasm_weakauras_parser.js
 cp ./src/index.html ./dist/index.html
 

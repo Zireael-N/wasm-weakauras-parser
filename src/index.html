@@ -49,7 +49,7 @@
         worker.onmessage = ({ data: { message, data } }) => {
             switch (message) {
                 case 'failure':
-                    alert(`Failed to decode: ${data}`);
+                    alert(data);
                     break;
                 case 'completed':
                     destination.value = data;

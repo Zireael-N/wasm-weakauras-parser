@@ -1,0 +1,19 @@
+{
+  "name": "wasm_weakauras_parser",
+  "type": "module",
+  "collaborators": [
+    "Velithris <13710677+Zireael-N@users.noreply.github.com>"
+  ],
+  "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "wasm_weakauras_parser_bg.wasm",
+    "wasm_weakauras_parser.js",
+    "wasm_weakauras_parser.d.ts"
+  ],
+  "main": "wasm_weakauras_parser.js",
+  "types": "wasm_weakauras_parser.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
